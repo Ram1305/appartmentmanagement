@@ -21,7 +21,7 @@ class ProfileTab extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Profile Header with Gradient
+            // Compact Profile Header
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -30,168 +30,287 @@ class ProfileTab extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
+                    AppTheme.primaryColor.withOpacity(0.85),
                   ],
                 ),
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Row(
                 children: [
-                  // Profile Picture with Shadow
+                  // Compact Profile Picture
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: CircleAvatar(
-                      radius: 60,
+                      radius: 35,
                       backgroundColor: Colors.white,
                       child: user.profilePic != null
                           ? ClipOval(
                               child: Image.network(
                                 user.profilePic!,
                                 fit: BoxFit.cover,
-                                width: 120,
-                                height: 120,
+                                width: 70,
+                                height: 70,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.person,
-                              size: 60,
+                              size: 35,
                               color: AppTheme.primaryColor,
                             ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: user.status == AccountStatus.approved
-                          ? AppTheme.secondaryColor
-                          : AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: user.status == AccountStatus.approved
+                                ? Colors.green.withOpacity(0.9)
+                                : user.status == AccountStatus.pending
+                                    ? Colors.orange.withOpacity(0.9)
+                                    : Colors.red.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            user.status.name.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: Text(
-                      user.status.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            // Info Cards Section
+            // Compact Info Cards Section
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(
+                  // Personal Information Section
+                  _buildSectionHeader('Personal Information', Icons.person_outline),
+                  const SizedBox(height: 10),
+                  // Compact grid layout for personal info
+                  _buildCompactInfoCard(
+                    'Username',
+                    user.username,
+                    Icons.person_outline_rounded,
+                    AppTheme.primaryColor,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCompactInfoCard(
                     'Email',
                     user.email,
                     Icons.email_outlined,
                     AppTheme.primaryColor,
                   ),
-                  const SizedBox(height: 12),
-                  _buildInfoCard(
-                    'Mobile',
-                    user.mobileNumber,
-                    Icons.phone_outlined,
-                    AppTheme.secondaryColor,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCompactInfoCard(
+                          'Mobile',
+                          user.mobileNumber,
+                          Icons.phone_outlined,
+                          AppTheme.secondaryColor,
+                        ),
+                      ),
+                      if (user.secondaryMobileNumber != null && user.secondaryMobileNumber!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildCompactInfoCard(
+                            'Secondary',
+                            user.secondaryMobileNumber!,
+                            Icons.phone_android_outlined,
+                            AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (user.address != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
+                  if (user.gender != null) ...[
+                    const SizedBox(height: 8),
+                    _buildCompactInfoCard(
+                      'Gender',
+                      user.gender!.name.toUpperCase(),
+                      Icons.wc_outlined,
+                      AppTheme.accentColor,
+                    ),
+                  ],
+                  if (user.address != null && user.address!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _buildCompactInfoCard(
                       'Address',
                       user.address!,
                       Icons.home_outlined,
                       AppTheme.accentColor,
                     ),
                   ],
-                  if (user.familyType != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      'Family Type',
-                      user.familyType!.name.toUpperCase(),
-                      Icons.family_restroom,
-                      AppTheme.primaryColor,
+                  
+                  // Tenant Details Section
+                  if (user.familyType != null || user.totalOccupants != null || 
+                      user.block != null || user.floor != null || user.roomNumber != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionHeader('Tenant Details', Icons.home_work_outlined),
+                    const SizedBox(height: 10),
+                  ],
+                  if (user.familyType != null || user.totalOccupants != null) ...[
+                    Row(
+                      children: [
+                        if (user.familyType != null)
+                          Expanded(
+                            child: _buildCompactInfoCard(
+                              'Family Type',
+                              user.familyType!.name.toUpperCase(),
+                              Icons.family_restroom,
+                              AppTheme.primaryColor,
+                            ),
+                          ),
+                        if (user.familyType != null && user.totalOccupants != null)
+                          const SizedBox(width: 8),
+                        if (user.totalOccupants != null)
+                          Expanded(
+                            child: _buildCompactInfoCard(
+                              'Occupants',
+                              user.totalOccupants.toString(),
+                              Icons.people_outline,
+                              AppTheme.secondaryColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (user.block != null || user.floor != null || user.roomNumber != null) ...[
+                    Row(
+                      children: [
+                        if (user.block != null && user.block!.isNotEmpty)
+                          Expanded(
+                            child: _buildCompactInfoCard(
+                              'Block',
+                              user.block!,
+                              Icons.apartment_outlined,
+                              AppTheme.secondaryColor,
+                            ),
+                          ),
+                        if (user.block != null && user.floor != null && user.floor!.isNotEmpty)
+                          const SizedBox(width: 8),
+                        if (user.floor != null && user.floor!.isNotEmpty)
+                          Expanded(
+                            child: _buildCompactInfoCard(
+                              'Floor',
+                              user.floor!,
+                              Icons.stairs_outlined,
+                              AppTheme.accentColor,
+                            ),
+                          ),
+                        if ((user.block != null || user.floor != null) && user.roomNumber != null && user.roomNumber!.isNotEmpty)
+                          const SizedBox(width: 8),
+                        if (user.roomNumber != null && user.roomNumber!.isNotEmpty)
+                          Expanded(
+                            child: _buildCompactInfoCard(
+                              'Room',
+                              user.roomNumber!,
+                              Icons.door_front_door_outlined,
+                              AppTheme.primaryColor,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
-                  if (user.block != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      'Block',
-                      user.block!,
-                      Icons.apartment_outlined,
-                      AppTheme.secondaryColor,
-                    ),
+                  
+                  // Identity Documents Section
+                  if (user.aadhaarCard != null || user.panCard != null ||
+                      user.aadhaarCardFrontImage != null || user.aadhaarCardBackImage != null ||
+                      user.panCardImage != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionHeader('Identity Documents', Icons.badge_outlined),
+                    const SizedBox(height: 10),
                   ],
-                  if (user.floor != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      'Floor',
-                      user.floor!,
-                      Icons.stairs_outlined,
-                      AppTheme.accentColor,
-                    ),
-                  ],
-                  if (user.roomNumber != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      'Room',
-                      user.roomNumber!,
-                      Icons.door_front_door_outlined,
-                      AppTheme.primaryColor,
-                    ),
-                  ],
-                  if (user.aadhaarCard != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
+                  if (user.aadhaarCard != null && user.aadhaarCard!.isNotEmpty) ...[
+                    _buildCompactInfoCard(
                       'Aadhaar',
                       user.aadhaarCard!,
                       Icons.badge_outlined,
                       AppTheme.secondaryColor,
                     ),
+                    const SizedBox(height: 8),
                   ],
-                  if (user.panCard != null) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      'PAN',
+                  if (user.aadhaarCardFrontImage != null || user.aadhaarCardBackImage != null) ...[
+                    Row(
+                      children: [
+                        if (user.aadhaarCardFrontImage != null)
+                          Expanded(
+                            child: _buildCompactImageCard(
+                              'Aadhaar Front',
+                              user.aadhaarCardFrontImage!,
+                            ),
+                          ),
+                        if (user.aadhaarCardFrontImage != null && user.aadhaarCardBackImage != null)
+                          const SizedBox(width: 8),
+                        if (user.aadhaarCardBackImage != null)
+                          Expanded(
+                            child: _buildCompactImageCard(
+                              'Aadhaar Back',
+                              user.aadhaarCardBackImage!,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (user.panCard != null && user.panCard!.isNotEmpty) ...[
+                    _buildCompactInfoCard(
+                      'PAN Card',
                       user.panCard!,
                       Icons.credit_card_outlined,
                       AppTheme.accentColor,
                     ),
+                    const SizedBox(height: 8),
                   ],
-                  const SizedBox(height: 30),
+                  if (user.panCardImage != null) ...[
+                    _buildCompactImageCard(
+                      'PAN Card',
+                      user.panCardImage!,
+                    ),
+                  ],
+                  
+                  const SizedBox(height: 20),
                   // Logout Button
                   SizedBox(
                     width: double.infinity,
@@ -239,15 +358,15 @@ class ProfileTab extends StatelessWidget {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.errorColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 4,
+                        elevation: 2,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -257,59 +376,173 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String label, String value, IconData icon, Color iconColor) {
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactInfoCard(String label, String value, IconData icon, Color iconColor) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: iconColor, size: 24),
+              child: Icon(icon, color: iconColor, size: 18),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       color: AppTheme.textColor.withOpacity(0.6),
                       fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     value,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompactImageCard(String label, String imageUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textColor.withOpacity(0.7),
+              ),
+            ),
+          ),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 120,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: double.infinity,
+                  height: 120,
+                  color: Colors.grey[100],
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.grey[400], size: 32),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Failed',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: double.infinity,
+                  height: 120,
+                  color: Colors.grey[100],
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1287,11 +1287,22 @@ class ApiService {
   }
 
   // Update user status (approve/reject)
-  Future<Map<String, dynamic>> updateUserStatus(String userId, String status) async {
+  Future<Map<String, dynamic>> updateUserStatus(
+    String userId,
+    String status, {
+    String? block,
+    String? floor,
+    String? roomNumber,
+  }) async {
     try {
+      final data = {'status': status};
+      if (block != null) data['block'] = block;
+      if (floor != null) data['floor'] = floor;
+      if (roomNumber != null) data['roomNumber'] = roomNumber;
+      
       final response = await _dio.put(
         '${ApiConfig.updateUserStatus}/$userId/status',
-        data: {'status': status},
+        data: data,
       );
 
       if (response.statusCode == 200) {
@@ -1444,6 +1455,10 @@ class ApiService {
     String? targetAudience,
     bool? isActive,
   }) async {
+    // Get all events (notices with type='event')
+    if (type == 'event') {
+      type = 'event';
+    }
     try {
       final queryParams = <String, dynamic>{};
       if (type != null) queryParams['type'] = type;
@@ -1499,21 +1514,25 @@ class ApiService {
   Future<Map<String, dynamic>> createNotice({
     required String title,
     required String content,
+    String? subtitle,
     String? type,
     String? targetAudience,
     String? priority,
     String? expiryDate,
+    String? eventDate,
   }) async {
     try {
       final response = await _dio.post(
         ApiConfig.createNotice,
         data: {
           'title': title,
+          'subtitle': subtitle,
           'content': content,
           'type': type,
           'targetAudience': targetAudience,
           'priority': priority,
           'expiryDate': expiryDate,
+          'eventDate': eventDate,
         },
       );
 

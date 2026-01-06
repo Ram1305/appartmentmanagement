@@ -16,12 +16,6 @@ class ComplaintsTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Complaints'),
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showRaiseComplaintDialog(context),
-          ),
-        ],
       ),
       body: BlocBuilder<UserBloc, UserState>(
         builder: (context, state) {
@@ -29,35 +23,51 @@ class ComplaintsTab extends StatelessWidget {
             final complaints = state.complaints
                 .where((c) => c.userId == userId)
                 .toList();
-            if (complaints.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.report_problem_outlined,
-                      size: 64,
-                      color: AppTheme.textColor.withOpacity(0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No complaints yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: AppTheme.textColor.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => _showRaiseComplaintDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Raise Complaint'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return ListView.builder(
+            
+            return DefaultTabController(
+              length: 2,
+              child: Column(
+                children: [
+                  TabBar(
+                    tabs: const [
+                      Tab(icon: Icon(Icons.grid_view), text: 'Categories'),
+                      Tab(icon: Icon(Icons.list), text: 'My Complaints'),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        // Categories Grid View
+                        _buildCategoryGrid(),
+                        // Complaints List View
+                        complaints.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.report_problem_outlined,
+                                      size: 64,
+                                      color: AppTheme.textColor.withOpacity(0.3),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No complaints yet',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: AppTheme.textColor.withOpacity(0.6),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton.icon(
+                                      onPressed: () => _showRaiseComplaintDialog(context, null),
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Raise Complaint'),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: complaints.length,
               itemBuilder: (context, index) {
@@ -163,7 +173,13 @@ class ComplaintsTab extends StatelessWidget {
                     ),
                   ),
                 );
-              },
+                              },
+                            ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           }
           return const Center(child: CircularProgressIndicator());
@@ -198,10 +214,78 @@ class ComplaintsTab extends StatelessWidget {
     }
   }
 
-  void _showRaiseComplaintDialog(BuildContext context) {
+  void _showRaiseComplaintDialog(BuildContext context, ComplaintType? type) {
     showDialog(
       context: context,
-      builder: (context) => RaiseComplaintDialog(userId: userId),
+      builder: (context) => RaiseComplaintDialog(userId: userId, initialType: type),
+    );
+  }
+
+  Widget _buildCategoryGrid() {
+    final categories = [
+      {'type': ComplaintType.plumbing, 'icon': Icons.plumbing, 'label': 'Plumbing', 'color': Colors.blue},
+      {'type': ComplaintType.electrical, 'icon': Icons.electrical_services, 'label': 'Electrical', 'color': Colors.orange},
+      {'type': ComplaintType.cleaning, 'icon': Icons.cleaning_services, 'label': 'Cleaning', 'color': Colors.green},
+      {'type': ComplaintType.maintenance, 'icon': Icons.build, 'label': 'Maintenance', 'color': Colors.purple},
+      {'type': ComplaintType.security, 'icon': Icons.security, 'label': 'Security', 'color': Colors.red},
+      {'type': ComplaintType.other, 'icon': Icons.more_horiz, 'label': 'Others', 'color': Colors.grey},
+    ];
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.1,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
+        return InkWell(
+          onTap: () => _showRaiseComplaintDialog(context, category['type'] as ComplaintType),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: (category['color'] as Color).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    category['icon'] as IconData,
+                    size: 32,
+                    color: category['color'] as Color,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  category['label'] as String,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

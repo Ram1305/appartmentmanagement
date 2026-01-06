@@ -20,7 +20,7 @@ const allowedOrigins = [
   'http://192.168.29.61',
   'http://10.21.175.15:5000', // Previous IP
   'http://10.36.111.15:5000', // Current IP
-  'https://72.61.236.154:5000', // Production HTTPS server
+  'http://72.61.236.154:5000', // Production HTTPS server
   // Add Flutter app origins
   'http://10.0.2.2:5000', // Android emulator
   'http://localhost:5000', // iOS simulator

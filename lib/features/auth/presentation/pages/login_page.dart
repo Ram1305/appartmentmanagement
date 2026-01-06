@@ -193,10 +193,24 @@ class _LoginPageState extends State<LoginPage> {
             print('✓ Login successful!');
             print('User: ${state.user.name}');
             print('UserType: ${state.user.userType}');
+            print('Status: ${state.user.status}');
             setState(() {
               _isLoading = false;
             });
-            _navigateToDashboard(state.user);
+            // Check user status - if pending, show waiting page; if approved, go to dashboard
+            if (state.user.status == AccountStatus.pending) {
+              Navigator.pushReplacementNamed(context, AppRoutes.waitingApproval);
+            } else if (state.user.status == AccountStatus.approved) {
+              _navigateToDashboard(state.user);
+            } else if (state.user.status == AccountStatus.rejected) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Your account has been rejected. Please contact administrator.'),
+                  backgroundColor: AppTheme.errorColor,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            }
           } else if (state is AuthUnauthenticated) {
             print('User unauthenticated');
             setState(() {

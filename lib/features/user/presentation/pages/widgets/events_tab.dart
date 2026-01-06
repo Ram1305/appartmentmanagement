@@ -1,8 +1,50 @@
 import 'package:flutter/material.dart';
 import '../../../../../../core/app_theme.dart';
+import '../../../../../../core/models/event_model.dart';
+import '../../../../../../core/services/api_service.dart';
 
-class EventsTab extends StatelessWidget {
+class EventsTab extends StatefulWidget {
   const EventsTab({super.key});
+
+  @override
+  State<EventsTab> createState() => _EventsTabState();
+}
+
+class _EventsTabState extends State<EventsTab> {
+  final ApiService _apiService = ApiService();
+  List<EventModel> _events = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _apiService.getAllNotices(type: 'event');
+      if (response['success'] == true && response['notices'] != null) {
+        setState(() {
+          _events = (response['notices'] as List)
+              .map((e) => EventModel.fromJson(e))
+              .toList()
+            ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading events: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,65 +52,71 @@ class EventsTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Events'),
         automaticallyImplyLeading: false,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildEventCard(
-            'Diwali Celebration',
-            DateTime.now().add(const Duration(days: 15)).toString().split(' ')[0],
-            'Grand Diwali celebration in the community hall with lights, sweets, and cultural programs',
-            Icons.celebration,
-            AppTheme.accentColor,
-          ),
-          _buildEventCard(
-            'Holi Festival',
-            DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0],
-            'Colorful Holi celebration with traditional music and delicious food',
-            Icons.palette,
-            AppTheme.secondaryColor,
-          ),
-          _buildEventCard(
-            'Community Meeting',
-            DateTime.now().add(const Duration(days: 7)).toString().split(' ')[0],
-            'Monthly community meeting to discuss apartment matters and maintenance',
-            Icons.event,
-            AppTheme.primaryColor,
-          ),
-          _buildEventCard(
-            'Ganesh Chaturthi',
-            DateTime.now().add(const Duration(days: 45)).toString().split(' ')[0],
-            'Ganesh Chaturthi celebration with puja and cultural activities',
-            Icons.temple_hindu,
-            AppTheme.secondaryColor,
-          ),
-          _buildEventCard(
-            'Maintenance Day',
-            DateTime.now().add(const Duration(days: 10)).toString().split(' ')[0],
-            'Scheduled maintenance work for all blocks - water supply will be affected',
-            Icons.build,
-            AppTheme.errorColor,
-          ),
-          _buildEventCard(
-            'Annual General Meeting',
-            DateTime.now().add(const Duration(days: 20)).toString().split(' ')[0],
-            'Annual General Meeting (AGM) to discuss yearly activities and budget',
-            Icons.groups,
-            AppTheme.primaryColor,
-          ),
-          _buildEventCard(
-            'Dussehra Celebration',
-            DateTime.now().add(const Duration(days: 60)).toString().split(' ')[0],
-            'Dussehra celebration with Ramlila and cultural programs',
-            Icons.theater_comedy,
-            AppTheme.accentColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadEvents,
           ),
         ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _events.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No events scheduled',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadEvents,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _events.length,
+                    itemBuilder: (context, index) {
+                      final event = _events[index];
+                      return _buildEventCard(
+                        event.title,
+                        event.subtitle ?? '',
+                        event.eventDate.toString().split(' ')[0],
+                        event.content,
+                        _getEventIcon(event.title),
+                        _getEventColor(index),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 
-  Widget _buildEventCard(String title, String date, String description, IconData icon, Color color) {
+  IconData _getEventIcon(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('diwali')) return Icons.celebration;
+    if (lowerTitle.contains('holi')) return Icons.palette;
+    if (lowerTitle.contains('meeting')) return Icons.groups;
+    if (lowerTitle.contains('ganesh')) return Icons.temple_hindu;
+    if (lowerTitle.contains('maintenance')) return Icons.build;
+    return Icons.event;
+  }
+
+  Color _getEventColor(int index) {
+    final colors = [
+      AppTheme.primaryColor,
+      AppTheme.secondaryColor,
+      AppTheme.accentColor,
+      AppTheme.errorColor,
+    ];
+    return colors[index % colors.length];
+  }
+
+  Widget _buildEventCard(String title, String subtitle, String date, String description, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -133,6 +181,17 @@ class EventsTab extends StatelessWidget {
                       color: AppTheme.textColor,
                     ),
                   ),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textColor.withOpacity(0.7),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [

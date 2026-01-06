@@ -318,7 +318,20 @@ class _UserRegistrationPageState extends State<UserRegistrationPage> {
                 }
               });
             } else {
-              Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account created successfully! Please login to continue.'),
+                  backgroundColor: AppTheme.primaryColor,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              // Navigate to login page after a short delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                }
+              });
             }
           } else if (state is AuthError) {
             _showSnackBar(state.message, isError: true);
@@ -888,12 +901,16 @@ class _UserRegistrationPageState extends State<UserRegistrationPage> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'OTP sent to ${_emailController.text}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textColor.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      'OTP sent to ${_emailController.text}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textColor.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],

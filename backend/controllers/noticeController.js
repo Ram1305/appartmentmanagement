@@ -35,7 +35,7 @@ const getAllNotices = async (req, res) => {
 // @access  Public
 const createNotice = async (req, res) => {
   try {
-    const { title, content, type, targetAudience, priority, expiryDate } = req.body;
+    const { title, subtitle, content, type, targetAudience, priority, expiryDate, eventDate } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({
@@ -46,11 +46,13 @@ const createNotice = async (req, res) => {
 
     const notice = await Notice.create({
       title,
+      subtitle: subtitle || undefined,
       content,
       type: type || 'general',
       targetAudience: targetAudience || 'all',
       priority: priority || 'medium',
       expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+      eventDate: eventDate ? new Date(eventDate) : undefined,
       createdBy: req.userId,
       isActive: true,
     });

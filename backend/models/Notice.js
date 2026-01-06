@@ -7,9 +7,16 @@ const noticeSchema = new mongoose.Schema(
       required: [true, 'Notice title is required'],
       trim: true,
     },
+    subtitle: {
+      type: String,
+      trim: true,
+    },
     content: {
       type: String,
       required: [true, 'Notice content is required'],
+    },
+    eventDate: {
+      type: Date,
     },
     type: {
       type: String,

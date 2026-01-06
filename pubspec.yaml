@@ -36,6 +36,7 @@ flutter:
     - assets/icons/
     - assets/appicon.png
     - assets/splashicon.png
+    - assets/waiting.svg
 
 flutter_launcher_icons:
   android: true

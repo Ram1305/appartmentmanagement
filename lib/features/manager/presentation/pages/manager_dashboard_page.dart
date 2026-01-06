@@ -4,8 +4,11 @@ import '../../../../core/app_theme.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/models/user_model.dart';
 import '../../../../core/models/complaint_model.dart';
+import '../../../../core/models/event_model.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/manager_bloc.dart';
+import '../../../admin/presentation/pages/widgets/add_event_dialog.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -27,7 +30,10 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manager Dashboard'),
+        title: const Text(
+          'Manager Dashboard',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -51,6 +57,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
           const _TenantsTab(),
           const _ComplaintsTab(),
           const _SecurityTab(),
+          const _EventsTab(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -79,6 +86,10 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
             icon: Icon(Icons.security),
             label: 'Security',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event),
+            label: 'Events',
+          ),
         ],
       ),
     );
@@ -103,7 +114,12 @@ class _OverviewTab extends StatelessWidget {
           final resolvedComplaints = state.complaints.where((c) => c.status == ComplaintStatus.resolved).length;
           
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,16 +127,16 @@ class _OverviewTab extends StatelessWidget {
                 Text(
                   'Dashboard Overview',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textColor,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   'Manage your apartment complex efficiently',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     color: AppTheme.textColor.withOpacity(0.6),
                   ),
                 ),
@@ -130,9 +146,9 @@ class _OverviewTab extends StatelessWidget {
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.9,
                   children: [
                     _buildGridCard(
                       context,
@@ -226,15 +242,15 @@ class _OverviewTab extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon Container
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -244,48 +260,48 @@ class _OverviewTab extends StatelessWidget {
                         color.withOpacity(0.8),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: color.withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Icon(icon, color: Colors.white, size: 28),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 // Title
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: AppTheme.textColor.withOpacity(0.7),
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 // Value
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 36,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: color,
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 // Subtitle
                 Row(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 14,
+                      size: 12,
                       color: AppTheme.textColor.withOpacity(0.5),
                     ),
                     const SizedBox(width: 4),
@@ -293,7 +309,7 @@ class _OverviewTab extends StatelessWidget {
                       child: Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           color: AppTheme.textColor.withOpacity(0.6),
                           fontWeight: FontWeight.w500,
                         ),
@@ -321,85 +337,454 @@ class _TenantsTab extends StatelessWidget {
       builder: (context, state) {
         if (state is ManagerLoaded) {
           final tenants = state.users.where((u) => u.userType == UserType.user).toList();
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: tenants.length,
-            itemBuilder: (context, index) {
-              final tenant = tenants[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor,
-                    child: Text(
-                      tenant.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(tenant.name),
-                  subtitle: Text(tenant.email),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: tenant.status == AccountStatus.approved
-                          ? AppTheme.secondaryColor
-                          : AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      tenant.status.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+          final pendingTenants = tenants.where((t) => t.status == AccountStatus.pending).toList();
+          final approvedTenants = tenants.where((t) => t.status == AccountStatus.approved).toList();
+          
+          return DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  child: TabBar(
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: Colors.grey,
+                    indicatorColor: AppTheme.primaryColor,
+                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    unselectedLabelStyle: const TextStyle(fontSize: 13),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Pending'),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${pendingTenants.length}',
+                                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Approved'),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.secondaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${approvedTenants.length}',
+                                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  onTap: () => _showTenantDetails(context, tenant),
                 ),
-              );
-            },
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _TenantList(tenants: pendingTenants, isPending: true),
+                      _TenantList(tenants: approvedTenants, isPending: false),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         }
         return const Center(child: CircularProgressIndicator());
       },
     );
   }
+}
 
-  void _showTenantDetails(BuildContext context, UserModel tenant) {
+class _TenantList extends StatelessWidget {
+  final List<UserModel> tenants;
+  final bool isPending;
+
+  const _TenantList({required this.tenants, required this.isPending});
+
+  @override
+  Widget build(BuildContext context) {
+    if (tenants.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isPending ? Icons.pending_actions : Icons.check_circle_outline,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isPending ? 'No pending tenants' : 'No approved tenants',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 80,
+      ),
+      itemCount: tenants.length,
+      itemBuilder: (context, index) {
+        final tenant = tenants[index];
+        return _TenantCard(tenant: tenant, isPending: isPending);
+      },
+    );
+  }
+}
+
+class _TenantCard extends StatelessWidget {
+  final UserModel tenant;
+  final bool isPending;
+
+  const _TenantCard({required this.tenant, required this.isPending});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            // Profile Picture
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              backgroundImage: tenant.profilePic != null && tenant.profilePic!.isNotEmpty
+                  ? NetworkImage(tenant.profilePic!)
+                  : null,
+              child: tenant.profilePic == null || tenant.profilePic!.isEmpty
+                  ? Text(
+                      tenant.name[0].toUpperCase(),
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // Name, Email, Mobile
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tenant.name,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 12, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          tenant.email,
+                          style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.phone, size: 12, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        tenant.mobileNumber,
+                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                  if (tenant.block != null && tenant.floor != null && tenant.roomNumber != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.home, size: 12, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Block ${tenant.block}, Floor ${tenant.floor}, Room ${tenant.roomNumber}',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Status Badge and Actions
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: tenant.status == AccountStatus.approved
+                        ? AppTheme.secondaryColor
+                        : AppTheme.accentColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    tenant.status.name.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                PopupMenuButton<String>(
+                  iconSize: 18,
+                  icon: Icon(Icons.more_vert, size: 18, color: Colors.grey[700]),
+                  itemBuilder: (context) {
+                    final items = <PopupMenuItem<String>>[];
+                    if (isPending) {
+                      items.add(
+                        const PopupMenuItem<String>(
+                          value: 'approve',
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, size: 16, color: AppTheme.secondaryColor),
+                              SizedBox(width: 8),
+                              Text('Approve', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    items.addAll([
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 16, color: AppTheme.primaryColor),
+                            SizedBox(width: 8),
+                            Text('Edit', style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 16, color: AppTheme.errorColor),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ]);
+                    return items;
+                  },
+                  onSelected: (value) {
+                    if (value == 'approve') {
+                      _showApprovalDialog(context, tenant);
+                    } else if (value == 'edit') {
+                      _showEditDialog(context, tenant);
+                    } else if (value == 'delete') {
+                      _showDeleteDialog(context, tenant);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showApprovalDialog(BuildContext context, UserModel tenant) {
+    final blockController = TextEditingController();
+    final floorController = TextEditingController();
+    final roomController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(tenant.name),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Email: ${tenant.email}'),
-              Text('Mobile: ${tenant.mobileNumber}'),
-              Text('Status: ${tenant.status.name}'),
-              if (tenant.block != null) Text('Block: ${tenant.block}'),
-            ],
+        title: const Text(
+          'Approve Tenant',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Assign room details for ${tenant.name}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: blockController,
+                  decoration: const InputDecoration(
+                    labelText: 'Block *',
+                    hintText: 'e.g., A, B, C',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.all(12),
+                  ),
+                  style: const TextStyle(fontSize: 13),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Block is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: floorController,
+                  decoration: const InputDecoration(
+                    labelText: 'Floor *',
+                    hintText: 'e.g., 1, 2, 3',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.all(12),
+                  ),
+                  style: const TextStyle(fontSize: 13),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Floor is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: roomController,
+                  decoration: const InputDecoration(
+                    labelText: 'Room Number *',
+                    hintText: 'e.g., 101, 102',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.all(12),
+                  ),
+                  style: const TextStyle(fontSize: 13),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Room number is required';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
-          if (tenant.status == AccountStatus.pending)
-            ElevatedButton(
-              onPressed: () {
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(fontSize: 13)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
                 context.read<ManagerBloc>().add(
                       UpdateUserStatusEvent(
                         userId: tenant.id,
                         status: AccountStatus.approved,
+                        block: blockController.text.trim(),
+                        floor: floorController.text.trim(),
+                        roomNumber: roomController.text.trim(),
                       ),
                     );
                 Navigator.pop(context);
-              },
-              child: const Text('Approve'),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tenant approved and room assigned successfully'),
+                    backgroundColor: AppTheme.secondaryColor,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
+            child: const Text('Approve', style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, UserModel tenant) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Edit functionality coming soon')),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, UserModel tenant) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Delete Tenant',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${tenant.name}? This action cannot be undone.',
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel', style: TextStyle(fontSize: 13)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implement delete functionality
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Delete functionality coming soon')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text('Delete', style: TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -417,34 +802,87 @@ class _ComplaintsTab extends StatelessWidget {
         if (state is ManagerLoaded) {
           final complaints = state.complaints;
           if (complaints.isEmpty) {
-            return const Center(child: Text('No complaints'));
+            return Center(
+              child: Text(
+                'No complaints',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            );
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+            ),
             itemCount: complaints.length,
             itemBuilder: (context, index) {
               final complaint = complaints[index];
               return Card(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 10),
+                elevation: 1,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
+                    radius: 20,
                     backgroundColor: _getStatusColor(complaint.status),
                     child: Icon(
                       _getStatusIcon(complaint.status),
                       color: Colors.white,
+                      size: 18,
                     ),
                   ),
-                  title: Text(complaint.type.name.toUpperCase()),
+                  title: Text(
+                    complaint.type.name.toUpperCase(),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(complaint.description),
                       const SizedBox(height: 4),
-                      Text('By: ${complaint.userName}'),
-                      Text('Status: ${complaint.status.name}'),
+                      Text(
+                        complaint.description,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'By: ${complaint.userName}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                      Text(
+                        'Status: ${complaint.status.name}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
                     ],
                   ),
+                  isThreeLine: true,
                   trailing: PopupMenuButton<ComplaintStatus>(
+                    iconSize: 20,
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<ComplaintStatus>(
+                        value: ComplaintStatus.inProgress,
+                        child: Text('Mark In Progress', style: TextStyle(fontSize: 13)),
+                      ),
+                      const PopupMenuItem<ComplaintStatus>(
+                        value: ComplaintStatus.resolved,
+                        child: Text('Mark Resolved', style: TextStyle(fontSize: 13)),
+                      ),
+                      const PopupMenuItem<ComplaintStatus>(
+                        value: ComplaintStatus.rejected,
+                        child: Text('Reject', style: TextStyle(fontSize: 13)),
+                      ),
+                    ],
                     onSelected: (value) {
                       context.read<ManagerBloc>().add(
                             UpdateComplaintStatusEvent(
@@ -453,20 +891,6 @@ class _ComplaintsTab extends StatelessWidget {
                             ),
                           );
                     },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.inProgress,
-                        child: Text('Mark In Progress'),
-                      ),
-                      const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.resolved,
-                        child: Text('Mark Resolved'),
-                      ),
-                      const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.rejected,
-                        child: Text('Reject'),
-                      ),
-                    ],
                   ),
                 ),
               );
@@ -515,37 +939,58 @@ class _SecurityTab extends StatelessWidget {
         if (state is ManagerLoaded) {
           final security = state.users.where((u) => u.userType == UserType.security).toList();
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+            ),
             itemCount: security.length,
             itemBuilder: (context, index) {
               final sec = security[index];
               return Card(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 10),
+                elevation: 1,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
+                    radius: 20,
                     backgroundColor: AppTheme.primaryColor,
                     child: Text(
                       sec.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  title: Text(sec.name),
-                  subtitle: Text(sec.email),
+                  title: Text(
+                    sec.name,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  subtitle: Text(
+                    sec.email,
+                    style: const TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: sec.status == AccountStatus.approved
                           ? AppTheme.secondaryColor
                           : AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       sec.status.name.toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
@@ -555,6 +1000,198 @@ class _SecurityTab extends StatelessWidget {
         }
         return const Center(child: CircularProgressIndicator());
       },
+    );
+  }
+}
+
+class _EventsTab extends StatefulWidget {
+  const _EventsTab();
+
+  @override
+  State<_EventsTab> createState() => _EventsTabState();
+}
+
+class _EventsTabState extends State<_EventsTab> {
+  final ApiService _apiService = ApiService();
+  List<EventModel> _events = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _apiService.getAllNotices(type: 'event');
+      if (response['success'] == true && response['notices'] != null) {
+        setState(() {
+          _events = (response['notices'] as List)
+              .map((e) => EventModel.fromJson(e))
+              .toList();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading events: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _addEvent(String title, String subtitle, String content, DateTime eventDate) async {
+    try {
+      final response = await _apiService.createNotice(
+        title: title,
+        subtitle: subtitle.isEmpty ? null : subtitle,
+        content: content,
+        type: 'event',
+        targetAudience: 'all',
+        eventDate: eventDate.toIso8601String(),
+      );
+      if (response['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Event added successfully')),
+          );
+          _loadEvents();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['error'] ?? 'Failed to add event')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Text(
+                  'Events',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    AddEventDialog.show(context, _addEvent);
+                  },
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Event', style: TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _events.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text('No events yet', style: TextStyle(color: Colors.grey[600])),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).padding.bottom + 80,
+                  ),
+                  itemCount: _events.length,
+                  itemBuilder: (context, index) {
+                    final event = _events[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                          child: const Icon(Icons.event, color: AppTheme.primaryColor),
+                        ),
+                        title: Text(
+                          event.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (event.subtitle != null && event.subtitle!.isNotEmpty)
+                              Text(
+                                event.subtitle!,
+                                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            if (event.subtitle != null && event.subtitle!.isNotEmpty)
+                              const SizedBox(height: 4),
+                            Text(
+                              event.content,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_today, size: 14),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    event.eventDate.toString().split(' ')[0],
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

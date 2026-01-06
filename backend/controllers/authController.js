@@ -109,6 +109,12 @@ const registerUser = async (req, res) => {
     }
 
     // Create user in the appropriate collection
+    // Set status: regular users (user type or no type) should be 'pending', admin/manager/security are 'approved'
+    let userStatus = 'pending'; // Default to pending for regular users
+    if (userType === 'admin' || userType === 'manager' || userType === 'security') {
+      userStatus = 'approved';
+    }
+    
     const userData = {
       name,
       username: username.toLowerCase(),
@@ -117,7 +123,7 @@ const registerUser = async (req, res) => {
       mobileNumber,
       secondaryMobileNumber: secondaryMobileNumber || undefined,
       gender: gender || undefined,
-      status: userType === 'admin' || userType === 'manager' || userType === 'security' ? 'approved' : 'pending',
+      status: userStatus, // Regular users will have 'pending' status
       profilePic: profilePicUrl,
       aadhaarCard: aadhaarCard || undefined,
       aadhaarCardFrontImage: aadhaarFrontUrl,
@@ -840,7 +846,7 @@ const toggleUserActive = async (req, res) => {
 // @access  Public (should be protected in production)
 const updateUserStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, block, floor, roomNumber } = req.body;
 
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({
@@ -859,6 +865,14 @@ const updateUserStatus = async (req, res) => {
     }
 
     user.status = status;
+    
+    // If approving and room details are provided, update them
+    if (status === 'approved' && block && floor && roomNumber) {
+      user.block = block;
+      user.floor = floor;
+      user.roomNumber = roomNumber;
+    }
+    
     await user.save();
 
     res.json({
@@ -873,6 +887,9 @@ const updateUserStatus = async (req, res) => {
         userType: user.userType,
         status: user.status,
         isActive: user.isActive,
+        block: user.block,
+        floor: user.floor,
+        roomNumber: user.roomNumber,
       },
     });
   } catch (error) {

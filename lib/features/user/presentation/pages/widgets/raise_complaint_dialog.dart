@@ -5,8 +5,9 @@ import '../../bloc/user_bloc.dart';
 
 class RaiseComplaintDialog extends StatefulWidget {
   final String userId;
+  final ComplaintType? initialType;
 
-  const RaiseComplaintDialog({super.key, required this.userId});
+  const RaiseComplaintDialog({super.key, required this.userId, this.initialType});
 
   @override
   State<RaiseComplaintDialog> createState() => _RaiseComplaintDialogState();
@@ -16,6 +17,12 @@ class _RaiseComplaintDialogState extends State<RaiseComplaintDialog> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   ComplaintType? _selectedType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.initialType;
+  }
 
   @override
   void dispose() {

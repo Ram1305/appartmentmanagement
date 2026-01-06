@@ -4,6 +4,7 @@ import '../../features/auth/presentation/pages/user_registration_page.dart';
 import '../../features/auth/presentation/pages/security_registration_page.dart';
 import '../../features/auth/presentation/pages/user_type_selection_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
+import '../../features/auth/presentation/pages/waiting_approval_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/block_details_page.dart';
 import '../../features/manager/presentation/pages/manager_dashboard_page.dart';
@@ -18,6 +19,7 @@ class AppRoutes {
   static const String userRegistration = '/user-registration';
   static const String securityRegistration = '/security-registration';
   static const String forgotPassword = '/forgot-password';
+  static const String waitingApproval = '/waiting-approval';
   static const String adminDashboard = '/admin-dashboard';
   static const String blockDetails = '/block-details';
   static const String managerDashboard = '/manager-dashboard';
@@ -35,6 +37,7 @@ class AppRoutes {
       },
       securityRegistration: (context) => const SecurityRegistrationPage(),
       forgotPassword: (context) => const ForgotPasswordPage(),
+      waitingApproval: (context) => const WaitingApprovalPage(),
       adminDashboard: (context) => const AdminDashboardPage(),
       blockDetails: (context) {
         final block = ModalRoute.of(context)!.settings.arguments as BlockModel;

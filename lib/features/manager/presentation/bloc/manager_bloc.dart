@@ -17,14 +17,20 @@ class LoadManagerDataEvent extends ManagerEvent {}
 class UpdateUserStatusEvent extends ManagerEvent {
   final String userId;
   final AccountStatus status;
+  final String? block;
+  final String? floor;
+  final String? roomNumber;
 
   const UpdateUserStatusEvent({
     required this.userId,
     required this.status,
+    this.block,
+    this.floor,
+    this.roomNumber,
   });
 
   @override
-  List<Object?> get props => [userId, status];
+  List<Object?> get props => [userId, status, block, floor, roomNumber];
 }
 
 class UpdateComplaintStatusEvent extends ManagerEvent {
@@ -110,6 +116,9 @@ class ManagerBloc extends Bloc<ManagerEvent, ManagerState> {
       final response = await _apiService.updateUserStatus(
         event.userId,
         event.status.name,
+        block: event.block,
+        floor: event.floor,
+        roomNumber: event.roomNumber,
       );
       
       if (response['success'] == true) {
