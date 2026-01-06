@@ -3,7 +3,7 @@ class ApiConfig {
   // For Android emulator, use: 'http://10.0.2.2:5000/api'
   // For iOS simulator, use: 'http://localhost:5000/api'
   // For physical device, use your computer's IP: 'http://192.168.x.x:5000/api'
-  static const String baseUrl = 'http://192.168.29.61:5000/api'; // Physical device IP
+  static const String baseUrl = 'https://72.61.236.154:5000/api'; // Production HTTPS server
   
   static const String authBase = '$baseUrl/auth';
   
