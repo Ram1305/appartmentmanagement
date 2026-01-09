@@ -15,39 +15,43 @@ class HomeTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        automaticallyImplyLeading: false,
       ),
       body: BlocBuilder<UserBloc, UserState>(
         builder: (context, state) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildWelcomeCard(user),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 _buildRentCard(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Visitors',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     ElevatedButton.icon(
                       onPressed: () => _showAddVisitorDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Visitor'),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 _buildVisitorsList(context),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 _buildQuickActions(context),
               ],
             ),
@@ -68,35 +72,35 @@ class HomeTab extends StatelessWidget {
             AppTheme.primaryColor.withOpacity(0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: AppTheme.primaryColor.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.waving_hand,
                     color: Colors.white,
-                    size: 28,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,16 +108,16 @@ class HomeTab extends StatelessWidget {
                       Text(
                         'Welcome back,',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 11,
                           color: Colors.white.withOpacity(0.9),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         user.name.split(' ')[0],
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -123,24 +127,24 @@ class HomeTab extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.apartment, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.apartment, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       user.block != null
                           ? 'Block ${user.block}, Floor ${user.floor}, Room ${user.roomNumber}'
                           : 'Account Status: ${user.status.name.toUpperCase()}',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
                       ),
@@ -159,76 +163,76 @@ class HomeTab extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppTheme.secondaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.account_balance_wallet,
                     color: AppTheme.secondaryColor,
-                    size: 24,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 const Text(
                   'Rent Details',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             _buildRentItem('Monthly Rent', '₹15,000', Icons.home),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _buildRentItem('Maintenance', '₹2,000', Icons.build),
-            const Divider(height: 24),
+            const Divider(height: 16),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: _buildRentItem('Total Due', '₹17,000', Icons.payments, isTotal: true),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.payment, color: Colors.white),
+                icon: const Icon(Icons.payment, color: Colors.white, size: 16),
                 label: const Text(
                   'Pay Now',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
@@ -247,14 +251,14 @@ class HomeTab extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 16,
               color: isTotal ? AppTheme.primaryColor : AppTheme.textColor.withOpacity(0.6),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: isTotal ? 18 : 16,
+                fontSize: isTotal ? 14 : 13,
                 fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
                 color: isTotal ? AppTheme.primaryColor : AppTheme.textColor,
               ),
@@ -264,7 +268,7 @@ class HomeTab extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontSize: isTotal ? 20 : 16,
+            fontSize: isTotal ? 16 : 14,
             fontWeight: FontWeight.bold,
             color: isTotal ? AppTheme.primaryColor : AppTheme.secondaryColor,
           ),
@@ -286,11 +290,17 @@ class HomeTab extends StatelessWidget {
           }).toList();
           
           if (visitors.isEmpty) {
-            return const Card(
+            return Card(
               child: Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Center(
-                  child: Text('No visitors added yet'),
+                  child: Text(
+                    'No visitors added yet',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textColor.withOpacity(0.6),
+                    ),
+                  ),
                 ),
               ),
             );
@@ -302,20 +312,21 @@ class HomeTab extends StatelessWidget {
             itemBuilder: (context, index) {
               final visitor = visitors[index];
               return Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  dense: true,
                   leading: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -327,7 +338,7 @@ class HomeTab extends StatelessWidget {
                       ),
                     ),
                     child: CircleAvatar(
-                      radius: 28,
+                      radius: 22,
                       backgroundColor: Colors.transparent,
                       child: visitor.image != null
                           ? ClipOval(
@@ -336,43 +347,43 @@ class HomeTab extends StatelessWidget {
                                 fit: BoxFit.cover,
                               ),
                             )
-                          : const Icon(Icons.person, color: Colors.white, size: 24),
+                          : const Icon(Icons.person, color: Colors.white, size: 18),
                     ),
                   ),
                   title: Text(
                     visitor.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                   ),
                   subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 3),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppTheme.secondaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             visitor.type.name.toUpperCase(),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.secondaryColor,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.phone, size: 14, color: AppTheme.textColor.withOpacity(0.6)),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
+                        Icon(Icons.phone, size: 12, color: AppTheme.textColor.withOpacity(0.6)),
+                        const SizedBox(width: 3),
                         Flexible(
                           child: Text(
                             visitor.mobileNumber,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: AppTheme.textColor.withOpacity(0.6),
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -385,12 +396,12 @@ class HomeTab extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Icon(Icons.calendar_today, size: 16, color: AppTheme.textColor.withOpacity(0.6)),
-                      const SizedBox(height: 4),
+                      Icon(Icons.calendar_today, size: 14, color: AppTheme.textColor.withOpacity(0.6)),
+                      const SizedBox(height: 2),
                       Text(
                         visitor.visitTime.toString().split(' ')[0],
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           color: AppTheme.textColor.withOpacity(0.6),
                         ),
                       ),
@@ -422,55 +433,55 @@ class HomeTab extends StatelessWidget {
             AppTheme.errorColor.withOpacity(0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.errorColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: AppTheme.errorColor.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Row(
               children: [
-                Icon(Icons.flash_on, color: Colors.white, size: 28),
-                SizedBox(width: 12),
+                Icon(Icons.flash_on, color: Colors.white, size: 20),
+                SizedBox(width: 8),
                 Text(
                   'Quick Actions',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
                   // Navigate to complaints tab
                 },
-                icon: const Icon(Icons.report_problem, color: Colors.white),
+                icon: const Icon(Icons.report_problem, color: Colors.white, size: 16),
                 label: const Text(
                   'Raise Complaint',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.2),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
                   ),
                   elevation: 0,

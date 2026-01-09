@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
 import '../../../../core/models/user_model.dart';
 import '../../../../core/models/complaint_model.dart';
 import '../../../../core/models/visitor_model.dart';
@@ -21,17 +23,37 @@ class AddVisitorEvent extends UserEvent {
   final String userId;
   final String name;
   final String mobileNumber;
-  final VisitorType type;
+  final VisitorCategory category;
+  final RelativeType? relativeType;
+  final VisitorType? type;
+  final String reasonForVisit;
+  final DateTime visitDateTime;
+  final File? image;
 
   const AddVisitorEvent({
     required this.userId,
     required this.name,
     required this.mobileNumber,
-    required this.type,
+    required this.category,
+    this.relativeType,
+    this.type,
+    required this.reasonForVisit,
+    required this.visitDateTime,
+    this.image,
   });
 
   @override
-  List<Object?> get props => [userId, name, mobileNumber, type];
+  List<Object?> get props => [
+        userId,
+        name,
+        mobileNumber,
+        category,
+        relativeType,
+        type,
+        reasonForVisit,
+        visitDateTime,
+        image,
+      ];
 }
 
 class RaiseComplaintEvent extends UserEvent {
@@ -108,6 +130,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             id: const Uuid().v4(),
             name: indianVisitorNames[i],
             mobileNumber: '9${(1000000000 + i).toString().substring(1)}',
+            category: VisitorCategory.outsider,
             type: visitorTypes[i % visitorTypes.length],
             block: ['A', 'B', 'C'][i % 3],
             homeNumber: '${(i % 10) + 1}',
@@ -169,22 +192,64 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         ),
       );
       final visitors = await _getVisitors();
+      
+      // Generate OTP
+      final otp = _generateOTP();
+      
+      // Generate visitor ID for QR code
+      final visitorId = const Uuid().v4();
+      
+      // Create QR code data (JSON string with visitor info)
+      final qrData = jsonEncode({
+        'visitorId': visitorId,
+        'name': event.name,
+        'mobileNumber': event.mobileNumber,
+        'block': user.block ?? 'A',
+        'homeNumber': user.roomNumber ?? '101',
+        'visitTime': event.visitDateTime.toIso8601String(),
+        'otp': otp,
+      });
+      
+      // Handle image upload (for now, store path - in production, upload to server)
+      String? imagePath;
+      if (event.image != null) {
+        // In production, upload image to server and get URL
+        // For now, store local path
+        imagePath = event.image!.path;
+      }
+      
       final newVisitor = VisitorModel(
-        id: const Uuid().v4(),
+        id: visitorId,
         name: event.name,
         mobileNumber: event.mobileNumber,
-        type: event.type,
+        category: event.category,
+        relativeType: event.relativeType,
+        type: event.category == VisitorCategory.relative
+            ? VisitorType.guest // Default for relatives
+            : (event.type ?? VisitorType.other),
+        reasonForVisit: event.reasonForVisit,
+        image: imagePath,
         block: user.block ?? 'A',
         homeNumber: user.roomNumber ?? '101',
-        visitTime: DateTime.now(),
+        visitTime: event.visitDateTime,
+        otp: otp,
+        qrCode: qrData,
       );
+      
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final complaints = await _getComplaints();
       emit(UserLoaded(visitors: visitors, complaints: complaints));
+      
+      // Navigate to visitor details page (handled in UI)
     } catch (e) {
       // Handle error
     }
+  }
+
+  String _generateOTP() {
+    final random = Random();
+    return (100000 + random.nextInt(900000)).toString();
   }
 
   Future<void> _onRaiseComplaint(

@@ -15,7 +15,6 @@ class ProfileTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        automaticallyImplyLeading: false,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -34,46 +33,46 @@ class ProfileTab extends StatelessWidget {
                   ],
                 ),
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Row(
                 children: [
                   // Compact Profile Picture
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2.5),
+                      border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: CircleAvatar(
-                      radius: 35,
+                      radius: 28,
                       backgroundColor: Colors.white,
                       child: user.profilePic != null
                           ? ClipOval(
                               child: Image.network(
                                 user.profilePic!,
                                 fit: BoxFit.cover,
-                                width: 70,
-                                height: 70,
+                                width: 56,
+                                height: 56,
                               ),
                             )
                           : Icon(
                               Icons.person,
-                              size: 35,
+                              size: 28,
                               color: AppTheme.primaryColor,
                             ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,32 +80,32 @@ class ProfileTab extends StatelessWidget {
                         Text(
                           user.name,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            letterSpacing: 0.3,
+                            letterSpacing: 0.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 5),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: user.status == AccountStatus.approved
                                 ? Colors.green.withOpacity(0.9)
                                 : user.status == AccountStatus.pending
                                     ? Colors.orange.withOpacity(0.9)
                                     : Colors.red.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             user.status.name.toUpperCase(),
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
-                              fontSize: 10,
-                              letterSpacing: 0.8,
+                              fontSize: 9,
+                              letterSpacing: 0.6,
                             ),
                           ),
                         ),
@@ -118,13 +117,13 @@ class ProfileTab extends StatelessWidget {
             ),
             // Compact Info Cards Section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Personal Information Section
                   _buildSectionHeader('Personal Information', Icons.person_outline),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   // Compact grid layout for personal info
                   _buildCompactInfoCard(
                     'Username',
@@ -132,14 +131,14 @@ class ProfileTab extends StatelessWidget {
                     Icons.person_outline_rounded,
                     AppTheme.primaryColor,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   _buildCompactInfoCard(
                     'Email',
                     user.email,
                     Icons.email_outlined,
                     AppTheme.primaryColor,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -151,7 +150,7 @@ class ProfileTab extends StatelessWidget {
                         ),
                       ),
                       if (user.secondaryMobileNumber != null && user.secondaryMobileNumber!.isNotEmpty) ...[
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: _buildCompactInfoCard(
                             'Secondary',
@@ -164,7 +163,7 @@ class ProfileTab extends StatelessWidget {
                     ],
                   ),
                   if (user.gender != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _buildCompactInfoCard(
                       'Gender',
                       user.gender!.name.toUpperCase(),
@@ -173,7 +172,7 @@ class ProfileTab extends StatelessWidget {
                     ),
                   ],
                   if (user.address != null && user.address!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _buildCompactInfoCard(
                       'Address',
                       user.address!,
@@ -185,9 +184,9 @@ class ProfileTab extends StatelessWidget {
                   // Tenant Details Section
                   if (user.familyType != null || user.totalOccupants != null || 
                       user.block != null || user.floor != null || user.roomNumber != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     _buildSectionHeader('Tenant Details', Icons.home_work_outlined),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                   ],
                   if (user.familyType != null || user.totalOccupants != null) ...[
                     Row(
@@ -202,7 +201,7 @@ class ProfileTab extends StatelessWidget {
                             ),
                           ),
                         if (user.familyType != null && user.totalOccupants != null)
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         if (user.totalOccupants != null)
                           Expanded(
                             child: _buildCompactInfoCard(
@@ -214,7 +213,7 @@ class ProfileTab extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                   ],
                   if (user.block != null || user.floor != null || user.roomNumber != null) ...[
                     Row(
@@ -229,7 +228,7 @@ class ProfileTab extends StatelessWidget {
                             ),
                           ),
                         if (user.block != null && user.floor != null && user.floor!.isNotEmpty)
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         if (user.floor != null && user.floor!.isNotEmpty)
                           Expanded(
                             child: _buildCompactInfoCard(
@@ -240,7 +239,7 @@ class ProfileTab extends StatelessWidget {
                             ),
                           ),
                         if ((user.block != null || user.floor != null) && user.roomNumber != null && user.roomNumber!.isNotEmpty)
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         if (user.roomNumber != null && user.roomNumber!.isNotEmpty)
                           Expanded(
                             child: _buildCompactInfoCard(
@@ -258,9 +257,9 @@ class ProfileTab extends StatelessWidget {
                   if (user.aadhaarCard != null || user.panCard != null ||
                       user.aadhaarCardFrontImage != null || user.aadhaarCardBackImage != null ||
                       user.panCardImage != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     _buildSectionHeader('Identity Documents', Icons.badge_outlined),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                   ],
                   if (user.aadhaarCard != null && user.aadhaarCard!.isNotEmpty) ...[
                     _buildCompactInfoCard(
@@ -269,7 +268,7 @@ class ProfileTab extends StatelessWidget {
                       Icons.badge_outlined,
                       AppTheme.secondaryColor,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                   ],
                   if (user.aadhaarCardFrontImage != null || user.aadhaarCardBackImage != null) ...[
                     Row(
@@ -282,7 +281,7 @@ class ProfileTab extends StatelessWidget {
                             ),
                           ),
                         if (user.aadhaarCardFrontImage != null && user.aadhaarCardBackImage != null)
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         if (user.aadhaarCardBackImage != null)
                           Expanded(
                             child: _buildCompactImageCard(
@@ -292,7 +291,7 @@ class ProfileTab extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                   ],
                   if (user.panCard != null && user.panCard!.isNotEmpty) ...[
                     _buildCompactInfoCard(
@@ -301,7 +300,7 @@ class ProfileTab extends StatelessWidget {
                       Icons.credit_card_outlined,
                       AppTheme.accentColor,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                   ],
                   if (user.panCardImage != null) ...[
                     _buildCompactImageCard(
@@ -310,7 +309,7 @@ class ProfileTab extends StatelessWidget {
                     ),
                   ],
                   
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   // Logout Button
                   SizedBox(
                     width: double.infinity,
@@ -320,14 +319,14 @@ class ProfileTab extends StatelessWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            title: const Text('Logout'),
-                            content: const Text('Are you sure you want to logout?'),
+                            title: const Text('Logout', style: TextStyle(fontSize: 18)),
+                            content: const Text('Are you sure you want to logout?', style: TextStyle(fontSize: 14)),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
+                                child: const Text('Cancel', style: TextStyle(fontSize: 13)),
                               ),
                               ElevatedButton(
                                 onPressed: () {
@@ -340,33 +339,34 @@ class ProfileTab extends StatelessWidget {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.errorColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 ),
-                                child: const Text('Logout'),
+                                child: const Text('Logout', style: TextStyle(fontSize: 13)),
                               ),
                             ],
                           ),
                         );
                       },
-                      icon: const Icon(Icons.logout, color: Colors.white),
+                      icon: const Icon(Icons.logout, color: Colors.white, size: 16),
                       label: const Text(
                         'Logout',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.errorColor,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         elevation: 2,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -380,21 +380,21 @@ class ProfileTab extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             color: AppTheme.primaryColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(7),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 16),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 14),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: AppTheme.textColor,
-            letterSpacing: 0.3,
+            letterSpacing: 0.2,
           ),
         ),
       ],
@@ -416,18 +416,18 @@ class ProfileTab extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: iconColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(7),
               ),
-              child: Icon(icon, color: iconColor, size: 18),
+              child: Icon(icon, color: iconColor, size: 16),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,17 +436,17 @@ class ProfileTab extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: AppTheme.textColor.withOpacity(0.6),
                       fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
+                      letterSpacing: 0.2,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textColor,
                     ),
@@ -480,11 +480,11 @@ class ProfileTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textColor.withOpacity(0.7),
               ),
@@ -498,21 +498,21 @@ class ProfileTab extends StatelessWidget {
             child: Image.network(
               imageUrl,
               width: double.infinity,
-              height: 120,
+              height: 100,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: double.infinity,
-                  height: 120,
+                  height: 100,
                   color: Colors.grey[100],
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, color: Colors.grey[400], size: 32),
+                      Icon(Icons.error_outline, color: Colors.grey[400], size: 24),
                       const SizedBox(height: 4),
                       Text(
                         'Failed',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 9),
                       ),
                     ],
                   ),
@@ -522,7 +522,7 @@ class ProfileTab extends StatelessWidget {
                 if (loadingProgress == null) return child;
                 return Container(
                   width: double.infinity,
-                  height: 120,
+                  height: 100,
                   color: Colors.grey[100],
                   child: Center(
                     child: SizedBox(

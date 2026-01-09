@@ -98,6 +98,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
             id: const Uuid().v4(),
             name: indianVisitorNames[i],
             mobileNumber: '9${(1000000000 + i).toString().substring(1)}',
+            category: VisitorCategory.outsider,
             type: visitorTypes[i % visitorTypes.length],
             block: blockNames[i % blockNames.length],
             homeNumber: '${(i % 10) + 1}',
@@ -122,15 +123,32 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
     try {
       final visitors = await _getVisitors();
       final otp = _generateOTP();
+      
+      // Generate visitor ID for QR code
+      final visitorId = const Uuid().v4();
+      
+      // Create QR code data (JSON string with visitor info)
+      final qrData = jsonEncode({
+        'visitorId': visitorId,
+        'name': event.name,
+        'mobileNumber': event.mobileNumber,
+        'block': event.block,
+        'homeNumber': event.homeNumber,
+        'visitTime': DateTime.now().toIso8601String(),
+        'otp': otp,
+      });
+      
       final newVisitor = VisitorModel(
-        id: const Uuid().v4(),
+        id: visitorId,
         name: event.name,
         mobileNumber: event.mobileNumber,
+        category: VisitorCategory.outsider, // Security adds outsiders by default
         type: event.type,
         block: event.block,
         homeNumber: event.homeNumber,
         visitTime: DateTime.now(),
         otp: otp,
+        qrCode: qrData,
         image: event.image,
       );
       visitors.add(newVisitor);

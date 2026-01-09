@@ -51,7 +51,6 @@ class _EventsTabState extends State<EventsTab> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Events'),
-        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -66,11 +65,11 @@ class _EventsTabState extends State<EventsTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
+                      Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 12),
                       Text(
                         'No events scheduled',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
@@ -78,7 +77,7 @@ class _EventsTabState extends State<EventsTab> {
               : RefreshIndicator(
                   onRefresh: _loadEvents,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     itemCount: _events.length,
                     itemBuilder: (context, index) {
                       final event = _events[index];
@@ -118,7 +117,7 @@ class _EventsTabState extends State<EventsTab> {
 
   Widget _buildEventCard(String title, String subtitle, String date, String description, IconData icon, Color color) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -128,26 +127,26 @@ class _EventsTabState extends State<EventsTab> {
             color.withOpacity(0.05),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: color.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Row(
           children: [
             Container(
-              width: 70,
-              height: 70,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -157,18 +156,18 @@ class _EventsTabState extends State<EventsTab> {
                     color.withOpacity(0.7),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: color.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 32),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,49 +175,51 @@ class _EventsTabState extends State<EventsTab> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textColor,
                     ),
                   ),
                   if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: AppTheme.textColor.withOpacity(0.7),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
-                        size: 16,
+                        size: 14,
                         color: color,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Text(
                         date,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: AppTheme.textColor.withOpacity(0.7),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     description,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: AppTheme.textColor.withOpacity(0.8),
-                      height: 1.4,
+                      height: 1.3,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
