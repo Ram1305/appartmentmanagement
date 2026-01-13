@@ -48,17 +48,7 @@ class _EventsTabState extends State<EventsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Events'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadEvents,
-          ),
-        ],
-      ),
-      body: _isLoading
+    return _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _events.isEmpty
               ? Center(
@@ -91,8 +81,7 @@ class _EventsTabState extends State<EventsTab> {
                       );
                     },
                   ),
-                ),
-    );
+                );
   }
 
   IconData _getEventIcon(String title) {

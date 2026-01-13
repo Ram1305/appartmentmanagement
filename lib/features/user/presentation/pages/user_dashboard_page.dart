@@ -35,6 +35,9 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
         if (authState is AuthAuthenticated) {
           return Scaffold(
             drawer: _buildDrawer(context, authState.user),
+            appBar: AppBar(
+              title: Text(_getAppBarTitle(_currentIndex)),
+            ),
             body: IndexedStack(
               index: _currentIndex,
               children: [
@@ -63,162 +66,328 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
   Widget _buildDrawer(BuildContext context, user) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // Header with profile
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.8),
+      width: 240,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Compact Header with profile
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryColor,
+                    AppTheme.primaryColor.withOpacity(0.85),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                // Profile Image
-                Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    backgroundImage: user.profilePic != null
-                        ? NetworkImage(user.profilePic!)
-                        : null,
-                    child: user.profilePic == null
-                        ? const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: AppTheme.primaryColor,
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Name
-                Center(
-                  child: Text(
-                    user.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Mobile Number
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.phone, color: Colors.white, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        user.mobileNumber,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
+                      // Profile Image with border
+                      Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 35,
+                            backgroundColor: Colors.white,
+                            backgroundImage: user.profilePic != null
+                                ? NetworkImage(user.profilePic!)
+                                : null,
+                            child: user.profilePic == null
+                                ? Icon(
+                                    Icons.person,
+                                    size: 35,
+                                    color: AppTheme.primaryColor,
+                                  )
+                                : null,
+                          ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      // Name
+                      Center(
+                        child: Text(
+                          user.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Mobile Number
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.phone,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                user.mobileNumber,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (user.block != null && user.roomNumber != null) ...[
+                        const SizedBox(height: 6),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Block ${user.block} • Room ${user.roomNumber}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          // Menu Items
-          _buildDrawerItem(
-            context,
-            icon: Icons.home,
-            title: 'Home',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 0;
-              });
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.person,
-            title: 'Profile',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 3;
-              });
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.event,
-            title: 'Events',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 1;
-              });
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.report_problem,
-            title: 'Complaints',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 2;
-              });
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.people,
-            title: 'Visitors',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VisitorsPage(user: user),
+            const SizedBox(height: 6),
+            // Main Menu Items
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Column(
+                children: [
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.home_rounded,
+                    title: 'Home',
+                    index: 0,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _currentIndex = 0;
+                      });
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.event_rounded,
+                    title: 'Events',
+                    index: 1,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _currentIndex = 1;
+                      });
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.report_problem_rounded,
+                    title: 'Complaints',
+                    index: 2,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _currentIndex = 2;
+                      });
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.person_rounded,
+                    title: 'Profile',
+                    index: 3,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _currentIndex = 3;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Secondary Menu Items
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Column(
+                children: [
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.people_rounded,
+                    title: 'Visitors',
+                    isSecondary: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VisitorsPage(user: user),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.description_rounded,
+                    title: 'Terms & Conditions',
+                    isSecondary: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TermsAndConditionsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            // Logout Section
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.errorColor.withOpacity(0.2),
+                  width: 1,
                 ),
-              );
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.description,
-            title: 'Terms and Conditions',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
+              ),
+              child: _buildDrawerItem(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const TermsAndConditionsPage(),
-                ),
-              );
-            },
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            context,
-            icon: Icons.logout,
-            title: 'Logout',
-            onTap: () {
-              Navigator.pop(context);
-              context.read<AuthBloc>().add(LogoutEvent());
-              Navigator.pushReplacementNamed(context, AppRoutes.userTypeSelection);
-            },
-            textColor: AppTheme.errorColor,
-            iconColor: AppTheme.errorColor,
-          ),
-        ],
+                icon: Icons.logout_rounded,
+                title: 'Logout',
+                isLogout: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      content: const Text(
+                        'Are you sure you want to logout?',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<AuthBloc>().add(LogoutEvent());
+                            Navigator.pop(context);
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRoutes.userTypeSelection,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.errorColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -228,23 +397,110 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    Color? textColor,
-    Color? iconColor,
+    int? index,
+    bool isSecondary = false,
+    bool isLogout = false,
   }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: iconColor ?? AppTheme.primaryColor,
+    final isSelected = index != null && _currentIndex == index;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 3),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppTheme.primaryColor.withOpacity(0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        border: isSelected
+            ? Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                width: 1,
+              )
+            : null,
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: textColor ?? AppTheme.textColor,
-          fontSize: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 10,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isLogout
+                        ? AppTheme.errorColor.withOpacity(0.15)
+                        : isSelected
+                            ? AppTheme.primaryColor.withOpacity(0.15)
+                            : (isSecondary
+                                ? AppTheme.textColor.withOpacity(0.08)
+                                : AppTheme.primaryColor.withOpacity(0.1)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isLogout
+                        ? AppTheme.errorColor
+                        : isSelected
+                            ? AppTheme.primaryColor
+                            : (isSecondary
+                                ? AppTheme.textColor.withOpacity(0.7)
+                                : AppTheme.primaryColor.withOpacity(0.8)),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: isLogout
+                          ? AppTheme.errorColor
+                          : isSelected
+                              ? AppTheme.primaryColor
+                              : AppTheme.textColor,
+                      fontSize: 13,
+                      fontWeight: isSelected || isLogout
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
-      onTap: onTap,
     );
+  }
+
+  String _getAppBarTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Dashboard';
+      case 1:
+        return 'Events';
+      case 2:
+        return 'Complaints';
+      case 3:
+        return 'Profile';
+      default:
+        return 'Dashboard';
+    }
   }
 }
 

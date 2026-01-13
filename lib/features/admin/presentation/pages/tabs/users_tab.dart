@@ -19,7 +19,7 @@ class UsersTab extends StatelessWidget {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
                   Expanded(
@@ -35,41 +35,43 @@ class UsersTab extends StatelessWidget {
                           context.read<AdminBloc>().add(LoadAllUsersEvent());
                         });
                       },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add User'),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add User', style: TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(Icons.refresh, size: 18),
                     onPressed: () {
                       context.read<AdminBloc>().add(LoadAllUsersEvent());
                     },
                     tooltip: 'Refresh',
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
             ),
             if (currentState.regularUsers.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.people, color: AppTheme.primaryColor, size: 20),
-                      const SizedBox(width: 8),
+                      Icon(Icons.people, color: AppTheme.primaryColor, size: 16),
+                      const SizedBox(width: 6),
                       Text(
                         'Total Users: ${currentState.regularUsers.length}',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.primaryColor,
                         ),
@@ -78,7 +80,7 @@ class UsersTab extends StatelessWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Expanded(
               child: currentState.regularUsers.isEmpty
                   ? Center(
@@ -87,14 +89,14 @@ class UsersTab extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.people_outline,
-                            size: 64,
+                            size: 48,
                             color: AppTheme.textColor.withOpacity(0.3),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Text(
                             'No users added yet',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: AppTheme.textColor.withOpacity(0.6),
                             ),
                           ),
@@ -111,8 +113,8 @@ class UsersTab extends StatelessWidget {
                                 context.read<AdminBloc>().add(LoadAllUsersEvent());
                               });
                             },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add First User'),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Add First User', style: TextStyle(fontSize: 12)),
                           ),
                         ],
                       ),
@@ -123,12 +125,12 @@ class UsersTab extends StatelessWidget {
                         await Future.delayed(const Duration(milliseconds: 500));
                       },
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         itemCount: currentState.regularUsers.length,
                         itemBuilder: (context, index) {
                           final user = currentState.regularUsers[index];
                           return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
+                            margin: const EdgeInsets.only(bottom: 10),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
@@ -138,7 +140,7 @@ class UsersTab extends StatelessWidget {
                                   _getStatusColor(user.status).withOpacity(0.05),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: _getStatusColor(user.status).withOpacity(0.2),
                                 width: 1,
@@ -153,12 +155,12 @@ class UsersTab extends StatelessWidget {
                             ),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               isThreeLine: true,
                               leading: CircleAvatar(
-                                radius: 28,
+                                radius: 20,
                                 backgroundColor: _getStatusColor(user.status),
                                 child: Text(
                                   user.name.isNotEmpty
@@ -166,7 +168,7 @@ class UsersTab extends StatelessWidget {
                                       : 'U',
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 22,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -174,13 +176,13 @@ class UsersTab extends StatelessWidget {
                               title: Text(
                                 user.name,
                                 style: const TextStyle(
-                                  fontSize: 17,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.textColor,
                                 ),
                               ),
                               subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 6),
+                                padding: const EdgeInsets.only(top: 4),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
@@ -189,15 +191,15 @@ class UsersTab extends StatelessWidget {
                                       children: [
                                         Icon(
                                           Icons.email,
-                                          size: 12,
+                                          size: 10,
                                           color: AppTheme.textColor.withOpacity(0.6),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 3),
                                         Expanded(
                                           child: Text(
                                             user.email,
                                             style: TextStyle(
-                                              fontSize: 13,
+                                              fontSize: 11,
                                               color: AppTheme.textColor.withOpacity(0.7),
                                             ),
                                             overflow: TextOverflow.ellipsis,
@@ -205,35 +207,35 @@ class UsersTab extends StatelessWidget {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 3),
                                     Row(
                                       children: [
                                         Icon(
                                           Icons.phone,
-                                          size: 12,
+                                          size: 10,
                                           color: AppTheme.textColor.withOpacity(0.6),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 3),
                                         Text(
                                           user.mobileNumber,
                                           style: TextStyle(
-                                            fontSize: 13,
+                                            fontSize: 11,
                                             color: AppTheme.textColor.withOpacity(0.7),
                                           ),
                                         ),
                                         if (user.block != null) ...[
-                                          const SizedBox(width: 12),
+                                          const SizedBox(width: 8),
                                           Icon(
                                             Icons.apartment,
-                                            size: 12,
+                                            size: 10,
                                             color: AppTheme.textColor.withOpacity(0.6),
                                           ),
-                                          const SizedBox(width: 4),
+                                          const SizedBox(width: 3),
                                           Flexible(
                                             child: Text(
                                               'B${user.block} F${user.floor} R${user.roomNumber}',
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 10,
                                                 color: AppTheme.textColor.withOpacity(0.6),
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -250,23 +252,23 @@ class UsersTab extends StatelessWidget {
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                                      horizontal: 6,
+                                      vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
                                       color: _getStatusColor(user.status),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       _getShortStatus(user.status),
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 10,
+                                        fontSize: 8,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 8),
                                   Switch(
                                     value: user.isActive,
                                     onChanged: (value) {
@@ -275,6 +277,7 @@ class UsersTab extends StatelessWidget {
                                           );
                                     },
                                     activeColor: AppTheme.primaryColor,
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ],
                               ),

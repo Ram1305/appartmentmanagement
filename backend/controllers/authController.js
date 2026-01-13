@@ -256,31 +256,60 @@ const loginUser = async (req, res) => {
 
     // Use the user's actual userType field for validation, not just the collection
     // This handles cases where admin/manager might be in User collection but have correct userType
-    const actualUserType = user.userType || foundModelType;
+    // For Security users, always use 'security' since it's immutable and should always be 'security'
+    let actualUserType;
+    if (foundModelType === 'security') {
+      // For Security users, userType is immutable and should always be 'security'
+      actualUserType = 'security';
+      console.log('Security user detected - using "security" as actualUserType');
+    } else {
+      // For other user types, use the user's userType field or fall back to foundModelType
+      actualUserType = user.userType || foundModelType;
+    }
+    
     console.log('Checking userType...');
     console.log(`Current user.userType: ${user.userType}`);
     console.log(`Found model type: ${foundModelType}`);
     console.log(`Actual userType to use: ${actualUserType}`);
 
     // Update userType if it doesn't match the collection (for data consistency)
+    // Note: Security model has immutable userType, so we skip update for security users
     if (!user.userType || user.userType !== foundModelType) {
       console.log('Updating userType to match found model type...');
-      user.userType = foundModelType;
-      // Only update status if it's admin or manager
-      if (foundModelType === 'admin' || foundModelType === 'manager') {
-        user.status = 'approved';
-        console.log('Setting status to approved for admin/manager');
-      }
-      try {
-        await user.save();
-        console.log('✓ UserType updated successfully in database');
-      } catch (saveError) {
-        // If save fails (e.g., immutable field), just continue with the actualUserType
-        console.log('⚠ Note: Could not update userType in database, using actual userType:', actualUserType);
-        console.log('Save error:', saveError.message);
+      // Only try to update if it's not a security user (security has immutable userType)
+      if (foundModelType !== 'security') {
+        user.userType = foundModelType;
+        // Only update status if it's admin or manager
+        if (foundModelType === 'admin' || foundModelType === 'manager') {
+          user.status = 'approved';
+          console.log('Setting status to approved for admin/manager');
+        }
+        try {
+          await user.save();
+          console.log('✓ UserType updated successfully in database');
+        } catch (saveError) {
+          // If save fails, just continue with the actualUserType
+          console.log('⚠ Note: Could not update userType in database, using actual userType:', actualUserType);
+          console.log('Save error:', saveError.message);
+        }
+      } else {
+        // For security users, userType is immutable, so we just use foundModelType
+        console.log('⚠ Security userType is immutable, using foundModelType:', foundModelType);
       }
     } else {
       console.log('✓ UserType already matches found model type');
+    }
+    
+    // Ensure security users have approved status (they should by default, but double-check)
+    if (foundModelType === 'security' && user.status !== 'approved') {
+      console.log('Setting status to approved for security user');
+      user.status = 'approved';
+      try {
+        await user.save();
+        console.log('✓ Security user status updated to approved');
+      } catch (saveError) {
+        console.log('⚠ Could not update security user status:', saveError.message);
+      }
     }
 
     // Check user type if specified - use actualUserType for comparison (not just foundModelType)

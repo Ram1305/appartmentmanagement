@@ -27,6 +27,9 @@ class ComplaintModel extends Equatable {
   final DateTime? updatedAt;
   final String? assignedTo;
   final String? remarks;
+  final String? block;
+  final String? floor;
+  final String? roomNumber;
 
   const ComplaintModel({
     required this.id,
@@ -39,6 +42,9 @@ class ComplaintModel extends Equatable {
     this.updatedAt,
     this.assignedTo,
     this.remarks,
+    this.block,
+    this.floor,
+    this.roomNumber,
   });
 
   Map<String, dynamic> toJson() {
@@ -53,6 +59,9 @@ class ComplaintModel extends Equatable {
       'updatedAt': updatedAt?.toIso8601String(),
       'assignedTo': assignedTo,
       'remarks': remarks,
+      'block': block,
+      'floor': floor,
+      'roomNumber': roomNumber,
     };
   }
 
@@ -76,6 +85,9 @@ class ComplaintModel extends Equatable {
           : null,
       assignedTo: json['assignedTo'] as String?,
       remarks: json['remarks'] as String?,
+      block: json['block'] as String?,
+      floor: json['floor'] as String?,
+      roomNumber: json['roomNumber'] as String?,
     );
   }
 
@@ -91,6 +103,9 @@ class ComplaintModel extends Equatable {
         updatedAt,
         assignedTo,
         remarks,
+        block,
+        floor,
+        roomNumber,
       ];
 }
 

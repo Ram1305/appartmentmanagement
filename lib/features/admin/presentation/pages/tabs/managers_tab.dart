@@ -488,131 +488,137 @@ class ManagersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Header Section
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.primaryColor.withOpacity(0.8),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.people_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Managers',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      '${state.managers.length} ${state.managers.length == 1 ? 'Manager' : 'Managers'}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
+    return BlocBuilder<AdminBloc, AdminState>(
+      builder: (context, blocState) {
+        final currentState = blocState is AdminLoaded ? blocState : state;
+        
+        return Column(
+          children: [
+            // Header Section
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryColor,
+                    AppTheme.primaryColor.withOpacity(0.8),
                   ],
                 ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _showAddManagerDialog(context),
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Add Manager'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
-                  elevation: 2,
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: state.managers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.people_outline_rounded,
-                          size: 64,
-                          color: AppTheme.primaryColor.withOpacity(0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No Managers Yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Add your first manager to get started',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textColor.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.people_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
-                )
-              : ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.managers.length,
-                  itemBuilder: (context, index) {
-                    final manager = state.managers[index];
-                    return _buildUserCard(context, manager, true);
-                  },
-                ),
-        ),
-      ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Managers',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          '${currentState.managers.length} ${currentState.managers.length == 1 ? 'Manager' : 'Managers'}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddManagerDialog(context),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add Manager', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: currentState.managers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.people_outline_rounded,
+                              size: 64,
+                              color: AppTheme.primaryColor.withOpacity(0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'No Managers Yet',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add your first manager to get started',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textColor.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: currentState.managers.length,
+                      itemBuilder: (context, index) {
+                        final manager = currentState.managers[index];
+                        return _buildUserCard(context, manager, true);
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1235,7 +1241,7 @@ class ManagersTab extends StatelessWidget {
 
   Widget _buildUserCard(BuildContext context, UserModel user, bool isManager) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -1252,7 +1258,7 @@ class ManagersTab extends StatelessWidget {
                   Colors.grey[100]!,
                 ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: user.isActive
               ? AppTheme.primaryColor.withOpacity(0.2)
@@ -1273,15 +1279,15 @@ class ManagersTab extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
                 // Profile Picture
                 Stack(
                   children: [
                     Container(
-                      width: 70,
-                      height: 70,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -1319,7 +1325,7 @@ class ManagersTab extends StatelessWidget {
                                       user.name[0].toUpperCase(),
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 28,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1332,7 +1338,7 @@ class ManagersTab extends StatelessWidget {
                                 user.name[0].toUpperCase(),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 28,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -1343,21 +1349,21 @@ class ManagersTab extends StatelessWidget {
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          width: 20,
-                          height: 20,
+                          width: 14,
+                          height: 14,
                           decoration: BoxDecoration(
                             color: Colors.green,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: Colors.white,
-                              width: 3,
+                              width: 2,
                             ),
                           ),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 // User Info
                 Expanded(
                   child: Column(
@@ -1369,7 +1375,7 @@ class ManagersTab extends StatelessWidget {
                             child: Text(
                               user.name,
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: user.isActive
                                     ? AppTheme.textColor
@@ -1381,8 +1387,8 @@ class ManagersTab extends StatelessWidget {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                              horizontal: 6,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
                               color: user.status == AccountStatus.approved
@@ -1390,12 +1396,12 @@ class ManagersTab extends StatelessWidget {
                                   : user.status == AccountStatus.pending
                                       ? Colors.orange.withOpacity(0.15)
                                       : Colors.red.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               user.status.name.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 8,
                                 fontWeight: FontWeight.bold,
                                 color: user.status == AccountStatus.approved
                                     ? Colors.green[700]
@@ -1407,20 +1413,20 @@ class ManagersTab extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
                             Icons.email_rounded,
-                            size: 14,
+                            size: 12,
                             color: Colors.grey[600],
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               user.email,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 11,
                                 color: Colors.grey[600],
                               ),
                               maxLines: 1,
@@ -1429,19 +1435,19 @@ class ManagersTab extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           Icon(
                             Icons.phone_rounded,
-                            size: 14,
+                            size: 12,
                             color: Colors.grey[600],
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             user.mobileNumber,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 11,
                               color: Colors.grey[600],
                             ),
                           ),
@@ -1450,19 +1456,19 @@ class ManagersTab extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 // Actions Column
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Active Toggle
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: user.isActive
                             ? Colors.green.withOpacity(0.1)
                             : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Switch(
                         value: user.isActive,
@@ -1475,16 +1481,16 @@ class ManagersTab extends StatelessWidget {
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       user.isActive ? 'Active' : 'Inactive',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                         color: user.isActive ? Colors.green[700] : Colors.grey[600],
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     // Edit and Delete Buttons
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1492,34 +1498,34 @@ class ManagersTab extends StatelessWidget {
                         // Edit Button
                         InkWell(
                           onTap: () => _showEditManagerDialog(context, user),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           child: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: AppTheme.primaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Icon(
                               Icons.edit_rounded,
-                              size: 18,
+                              size: 14,
                               color: AppTheme.primaryColor,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         // Delete Button
                         InkWell(
                           onTap: () => _showDeleteManagerDialog(context, user),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           child: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Icon(
                               Icons.delete_rounded,
-                              size: 18,
+                              size: 14,
                               color: Colors.red,
                             ),
                           ),

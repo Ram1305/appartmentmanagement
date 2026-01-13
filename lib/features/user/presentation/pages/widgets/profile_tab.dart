@@ -12,12 +12,7 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
         child: Column(
           children: [
             // Compact Profile Header
@@ -372,8 +367,7 @@ class ProfileTab extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {

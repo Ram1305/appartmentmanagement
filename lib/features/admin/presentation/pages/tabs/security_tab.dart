@@ -448,34 +448,38 @@ class SecurityTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: () => _showAddSecurityDialog(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Security Staff'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return BlocBuilder<AdminBloc, AdminState>(
+      builder: (context, blocState) {
+        final currentState = blocState is AdminLoaded ? blocState : state;
+        
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddSecurityDialog(context),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add Security Staff', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+              ),
             ),
-          ),
-        ),
-        Expanded(
-          child: state.securityStaff.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No security staff added yet',
-                    style: TextStyle(fontSize: 16, color: AppTheme.textColor),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: state.securityStaff.length,
-                  itemBuilder: (context, index) {
-                    final security = state.securityStaff[index];
+            Expanded(
+              child: currentState.securityStaff.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No security staff added yet',
+                        style: TextStyle(fontSize: 14, color: AppTheme.textColor),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: currentState.securityStaff.length,
+                      itemBuilder: (context, index) {
+                        final security = currentState.securityStaff[index];
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -485,7 +489,7 @@ class SecurityTab extends StatelessWidget {
                             AppTheme.accentColor.withOpacity(0.05),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: AppTheme.accentColor.withOpacity(0.2),
                           width: 1,
@@ -499,20 +503,20 @@ class SecurityTab extends StatelessWidget {
                         ],
                       ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.all(20),
+                        contentPadding: const EdgeInsets.all(12),
                         leading: CircleAvatar(
-                          radius: 30,
+                          radius: 22,
                           backgroundColor: AppTheme.accentColor,
                           child: const Icon(
                             Icons.security,
                             color: Colors.white,
-                            size: 28,
+                            size: 20,
                           ),
                         ),
                         title: Text(
                           security.name,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textColor,
                           ),
@@ -520,19 +524,19 @@ class SecurityTab extends StatelessWidget {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             Text(
                               security.email,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 11,
                                 color: AppTheme.textColor.withOpacity(0.7),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               security.mobileNumber,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 11,
                                 color: AppTheme.textColor.withOpacity(0.7),
                               ),
                             ),
@@ -542,12 +546,12 @@ class SecurityTab extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: security.isActive
                                     ? Colors.green.withOpacity(0.1)
                                     : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Switch(
                                 value: security.isActive,
@@ -560,39 +564,39 @@ class SecurityTab extends StatelessWidget {
                                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 8),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 InkWell(
                                   onTap: () => _showEditSecurityDialog(context, security),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   child: Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: AppTheme.primaryColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Icon(
                                       Icons.edit_rounded,
-                                      size: 18,
+                                      size: 14,
                                       color: AppTheme.primaryColor,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 InkWell(
                                   onTap: () => _showDeleteSecurityDialog(context, security),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   child: Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: Colors.red.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: const Icon(
                                       Icons.delete_rounded,
-                                      size: 18,
+                                      size: 14,
                                       color: Colors.red,
                                     ),
                                   ),
@@ -605,8 +609,10 @@ class SecurityTab extends StatelessWidget {
                     );
                   },
                 ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 

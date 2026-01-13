@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../../core/app_theme.dart';
 import '../../../../../../core/models/user_model.dart';
+import '../../../../../../core/models/complaint_model.dart';
 import '../../bloc/user_bloc.dart';
 import 'add_visitor_dialog.dart';
+import 'raise_complaint_dialog.dart';
+import '../visitor_details_page.dart';
 
 class HomeTab extends StatelessWidget {
   final UserModel user;
@@ -12,11 +15,7 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-      ),
-      body: BlocBuilder<UserBloc, UserState>(
+    return BlocBuilder<UserBloc, UserState>(
         builder: (context, state) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(12),
@@ -57,8 +56,7 @@ class HomeTab extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 
   Widget _buildWelcomeCard(UserModel user) {
@@ -324,10 +322,20 @@ class HomeTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  dense: true,
-                  leading: Container(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VisitorDetailsPage(visitor: visitor),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    dense: true,
+                    leading: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
@@ -408,7 +416,8 @@ class HomeTab extends StatelessWidget {
                     ],
                   ),
                 ),
-              );
+              ),
+            );
             },
           );
         }
@@ -465,9 +474,7 @@ class HomeTab extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Navigate to complaints tab
-                },
+                onPressed: () => _showRaiseComplaintDialog(context),
                 icon: const Icon(Icons.report_problem, color: Colors.white, size: 16),
                 label: const Text(
                   'Raise Complaint',
@@ -498,6 +505,15 @@ class HomeTab extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AddVisitorDialog(userId: user.id),
+    );
+  }
+
+  void _showRaiseComplaintDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => RaiseComplaintDialog(userId: user.id, initialType: null),
     );
   }
 }

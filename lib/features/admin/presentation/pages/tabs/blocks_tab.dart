@@ -23,7 +23,7 @@ class BlocksTab extends StatelessWidget {
       children: [
         // Header with stats and create button
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -78,15 +78,15 @@ class BlocksTab extends StatelessWidget {
                 width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () => _showCreateBlockDialog(context),
-                  icon: const Icon(Icons.add_circle_outline, size: 24),
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
                   label: const Text(
                     'Create New Block',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
             style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
             ),
@@ -121,7 +121,7 @@ class BlocksTab extends StatelessWidget {
     required Color color,
   }) {
                     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -141,22 +141,22 @@ class BlocksTab extends StatelessWidget {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               color: AppTheme.textColor.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
@@ -238,10 +238,10 @@ class BlocksTab extends StatelessWidget {
     );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
           color: block.isActive
               ? AppTheme.primaryColor.withOpacity(0.3)
@@ -269,9 +269,9 @@ class BlocksTab extends StatelessWidget {
               arguments: block,
             );
           },
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -280,8 +280,8 @@ class BlocksTab extends StatelessWidget {
                   children: [
                     // Block Icon Badge
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 40,
+                      height: 40,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -296,7 +296,7 @@ class BlocksTab extends StatelessWidget {
                                   Colors.grey[500]!,
                                 ],
                         ),
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
                             color: (block.isActive
@@ -313,9 +313,9 @@ class BlocksTab extends StatelessWidget {
                               block.name,
                               style: const TextStyle(
                                 color: Colors.white,
-                            fontSize: 32,
+                            fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                            letterSpacing: 0.5,
                               ),
                             ),
                           ),
@@ -329,13 +329,13 @@ class BlocksTab extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
+                                child:                           Text(
                           'Block ${block.name}',
                           style: const TextStyle(
-                                    fontSize: 22,
+                                    fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textColor,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                               ),
@@ -355,8 +355,8 @@ class BlocksTab extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Container(
-                                      width: 8,
-                                      height: 8,
+                                      width: 6,
+                                      height: 6,
                                       decoration: BoxDecoration(
                                         color: block.isActive
                                             ? Colors.green
@@ -364,11 +364,11 @@ class BlocksTab extends StatelessWidget {
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 4),
                                     Text(
                                       block.isActive ? 'Active' : 'Inactive',
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w600,
                                         color: block.isActive
                                             ? Colors.green[700]
@@ -493,16 +493,16 @@ class BlocksTab extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 2),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -510,7 +510,7 @@ class BlocksTab extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
@@ -518,7 +518,7 @@ class BlocksTab extends StatelessWidget {
               Text(
                 subLabel,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 8,
                   color: color.withOpacity(0.7),
                 ),
         ),
@@ -541,18 +541,18 @@ class BlocksTab extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: color.withOpacity(0.3),
                 width: 1,
               ),
             ),
-            child: Icon(icon, size: 20, color: color),
+            child: Icon(icon, size: 16, color: color),
           ),
         ),
       ),

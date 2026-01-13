@@ -60,15 +60,21 @@ class RaiseComplaintEvent extends UserEvent {
   final String userId;
   final ComplaintType type;
   final String description;
+  final String? block;
+  final String? floor;
+  final String? roomNumber;
 
   const RaiseComplaintEvent({
     required this.userId,
     required this.type,
     required this.description,
+    this.block,
+    this.floor,
+    this.roomNumber,
   });
 
   @override
-  List<Object?> get props => [userId, type, description];
+  List<Object?> get props => [userId, type, description, block, floor, roomNumber];
 }
 
 // States
@@ -161,6 +167,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             description: complaintDescriptions[i % complaintDescriptions.length],
             status: ComplaintStatus.pending,
             createdAt: DateTime.now().subtract(Duration(days: i)),
+            block: ['A', 'B', 'C'][i % 3],
+            floor: '${(i % 5) + 1}',
+            roomNumber: '${(i % 10) + 101}',
           );
           complaints.add(complaint);
         }
@@ -279,6 +288,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         description: event.description,
         status: ComplaintStatus.pending,
         createdAt: DateTime.now(),
+        block: event.block ?? user.block,
+        floor: event.floor ?? user.floor,
+        roomNumber: event.roomNumber ?? user.roomNumber,
       );
       complaints.add(newComplaint);
       await _saveComplaints(complaints);
