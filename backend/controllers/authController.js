@@ -192,8 +192,15 @@ const loginUser = async (req, res) => {
   try {
     const { email, password, userType } = req.body;
     
+    // Accept either email or username as identifier
+    const identifier = email ? email.toString().toLowerCase().trim() : null;
+    if (!identifier) {
+      console.log('ERROR: No email or username provided');
+      return res.status(400).json({ error: 'Email or username is required' });
+    }
+
     console.log('=== LOGIN ATTEMPT ===');
-    console.log('Email:', email);
+    console.log('Identifier:', identifier);
     console.log('Requested userType:', userType);
     console.log('Password provided:', password ? 'Yes (hidden)' : 'No');
 
@@ -211,10 +218,13 @@ const loginUser = async (req, res) => {
     console.log('Searching for user in collections...');
     for (const { Model, type } of modelMap) {
       console.log(`Checking ${type} collection...`);
-      user = await Model.findOne({ email: email.toLowerCase() }).select('+password');
+      user = await Model.findOne({ $or: [{ email: identifier }, { username: identifier }] }).select('+password');
       if (user) {
         foundModelType = type;
         console.log(`✓ User found in ${type} collection`);
+        // Detect whether the match was by email or username
+        const matchedBy = (user.email && user.email.toLowerCase() === identifier) ? 'email' : ((user.username && user.username.toLowerCase() === identifier) ? 'username' : 'unknown');
+        console.log(`Matched by: ${matchedBy}`);
         console.log(`User ID: ${user._id}`);
         console.log(`User name: ${user.name}`);
         console.log(`User email: ${user.email}`);
@@ -404,7 +414,7 @@ const sendOTP = async (req, res) => {
     
     console.log('Checking if user exists in collections...');
     for (const { Model, type } of modelMap) {
-      user = await Model.findOne({ email: normalizedEmail });
+      user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] });
       if (user) {
         console.log(`✓ User found in ${type} collection`);
         break;
@@ -482,7 +492,7 @@ const verifyOTP = async (req, res) => {
     
     console.log('Checking if user exists in collections...');
     for (const { Model, type } of modelMap) {
-      user = await Model.findOne({ email: normalizedEmail }).select('+otp +otpExpiry');
+      user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] }).select('+otp +otpExpiry');
       if (user) {
         console.log(`✓ User found in ${type} collection`);
         break;
