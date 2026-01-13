@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/models/user_model.dart';
+import 'package:flutter/foundation.dart';
 import '../../data/repositories/auth_repository.dart';
 
 // Events
@@ -221,35 +222,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoginEvent event,
     Emitter<AuthState> emit,
   ) async {
-    print('=== AUTH BLOC LOGIN ===');
-    print('Email: ${event.email}');
-    print('UserType: ${event.userType}');
-    print('UserType.name: ${event.userType?.name}');
-    
+    debugPrint('=== AUTH BLOC LOGIN ===');
+    debugPrint('Email: ${event.email}');
+    debugPrint('UserType: ${event.userType}');
+    debugPrint('UserType.name: ${event.userType?.name}');
+
     emit(AuthLoading());
     try {
-      print('Calling authRepository.login...');
+      debugPrint('Calling authRepository.login...');
       final user = await authRepository.login(
         event.email,
         event.password,
         event.userType,
       );
-      print('AuthRepository returned user: ${user != null}');
+      debugPrint('AuthRepository returned user: ${user != null}');
       if (user != null) {
-        print('User details:');
-        print('  - Name: ${user.name}');
-        print('  - Email: ${user.email}');
-        print('  - UserType: ${user.userType}');
-        print('  - Status: ${user.status}');
-        print('  - IsActive: ${user.isActive}');
+        debugPrint('User details:');
+        debugPrint('  - Name: ${user.name}');
+        debugPrint('  - Email: ${user.email}');
+        debugPrint('  - UserType: ${user.userType}');
+        debugPrint('  - Status: ${user.status}');
+        debugPrint('  - IsActive: ${user.isActive}');
         emit(AuthAuthenticated(user: user));
       } else {
-        print('User is null, emitting error');
+        debugPrint('User is null, emitting error');
         emit(const AuthError(message: 'Invalid email or password'));
       }
     } catch (e) {
-      print('=== AUTH BLOC ERROR ===');
-      print('Error: $e');
+      debugPrint('=== AUTH BLOC ERROR ===');
+      debugPrint('Error: $e');
       emit(AuthError(message: e.toString()));
     }
   }
@@ -362,4 +363,3 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthUnauthenticated());
   }
 }
-

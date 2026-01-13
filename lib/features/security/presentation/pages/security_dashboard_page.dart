@@ -8,7 +8,6 @@ import '../../../../core/models/visitor_model.dart';
 import '../../../../core/models/block_model.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/security_bloc.dart';
-import 'widgets/otp_dialog.dart';
 
 class SecurityDashboardPage extends StatefulWidget {
   const SecurityDashboardPage({super.key});

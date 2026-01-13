@@ -65,7 +65,7 @@ class SecurityTab extends StatelessWidget {
                   'Enter security staff details and upload images',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.textColor.withOpacity(0.6),
+                    color: AppTheme.textColor.withOpacityCompat(0.6),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -478,138 +478,218 @@ class SecurityTab extends StatelessWidget {
                       itemCount: currentState.securityStaff.length,
                       itemBuilder: (context, index) {
                         final security = currentState.securityStaff[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.accentColor.withOpacity(0.1),
-                            AppTheme.accentColor.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AppTheme.accentColor.withOpacity(0.2),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        leading: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: AppTheme.accentColor,
-                          child: const Icon(
-                            Icons.security,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(
-                          security.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textColor,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 3),
-                            Text(
-                              security.email,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.textColor.withOpacity(0.7),
-                              ),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppTheme.accentColor.withOpacityCompat(0.08),
+                                AppTheme.accentColor.withOpacityCompat(0.02),
+                              ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              security.mobileNumber,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.textColor.withOpacity(0.7),
-                              ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppTheme.accentColor.withOpacityCompat(0.15),
+                              width: 1,
                             ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: security.isActive
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacityCompat(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
                               ),
-                              child: Switch(
-                                value: security.isActive,
-                                onChanged: (value) {
-                                  context.read<AdminBloc>().add(
-                                        ToggleUserActiveEvent(security.id),
-                                      );
-                                },
-                                activeColor: AppTheme.primaryColor,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
                               children: [
-                                InkWell(
-                                  onTap: () => _showEditSecurityDialog(context, security),
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Icon(
-                                      Icons.edit_rounded,
-                                      size: 14,
-                                      color: AppTheme.primaryColor,
-                                    ),
+                                // Profile Avatar
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundColor: AppTheme.accentColor,
+                                  backgroundImage: security.profilePic != null && security.profilePic!.isNotEmpty
+                                      ? NetworkImage(security.profilePic!)
+                                      : null,
+                                  child: (security.profilePic == null || security.profilePic!.isEmpty)
+                                      ? Text(
+                                          (security.name ?? 'S')
+                                              .trim()
+                                              .split(' ')
+                                              .map((e) => e.isNotEmpty ? e[0] : '')
+                                              .take(2)
+                                              .join()
+                                              .toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 16),
+                                // Info Section
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              security.name ?? 'No name',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppTheme.textColor,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: security.isActive
+                                                  ? Colors.green.withOpacityCompat(0.15)
+                                                  : Colors.grey.withOpacityCompat(0.15),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  security.isActive ? Icons.check_circle : Icons.block,
+                                                  color: security.isActive ? Colors.green[700] : Colors.grey[600],
+                                                  size: 14,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  security.isActive ? 'Active' : 'Inactive',
+                                                  style: TextStyle(
+                                                    color: security.isActive ? Colors.green[800] : Colors.grey[700],
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.email_outlined,
+                                            size: 14,
+                                            color: AppTheme.textColor.withOpacityCompat(0.6),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              security.email ?? '',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: AppTheme.textColor.withOpacityCompat(0.7),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.phone_outlined,
+                                            size: 14,
+                                            color: AppTheme.textColor.withOpacityCompat(0.6),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            security.mobileNumber ?? '',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: AppTheme.textColor.withOpacityCompat(0.7),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                InkWell(
-                                  onTap: () => _showDeleteSecurityDialog(context, security),
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
+                                const SizedBox(width: 12),
+                                // Actions Section
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Material(
+                                          color: AppTheme.primaryColor.withOpacityCompat(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: InkWell(
+                                            onTap: () => _showEditSecurityDialog(context, security),
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(8),
+                                              child: Icon(
+                                                Icons.edit_rounded,
+                                                size: 20,
+                                                color: AppTheme.primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Material(
+                                          color: Colors.red.withOpacityCompat(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: InkWell(
+                                            onTap: () => _showDeleteSecurityDialog(context, security),
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(8),
+                                              child: Icon(
+                                                Icons.delete_rounded,
+                                                size: 20,
+                                                color: Colors.redAccent,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    child: const Icon(
-                                      Icons.delete_rounded,
-                                      size: 14,
-                                      color: Colors.red,
+                                    const SizedBox(height: 8),
+                                    Transform.scale(
+                                      scale: 0.85,
+                                      child: Switch(
+                                        value: security.isActive,
+                                        onChanged: (value) {
+                                          context.read<AdminBloc>().add(
+                                                ToggleUserActiveEvent(security.id),
+                                              );
+                                        },
+                                        activeColor: AppTheme.primaryColor,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
           ],
         );
       },
@@ -696,7 +776,7 @@ class SecurityTab extends StatelessWidget {
                         'Update security staff details',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppTheme.textColor.withOpacity(0.6),
+                          color: AppTheme.textColor.withOpacityCompat(0.6),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -1232,3 +1312,4 @@ class SecurityTab extends StatelessWidget {
     );
   }
 }
+

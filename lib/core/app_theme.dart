@@ -33,7 +33,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
         color: Colors.white,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withOpacityCompat(0.1),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -54,7 +54,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: errorColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -65,7 +66,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 4,
-          shadowColor: Colors.black.withOpacity(0.2),
+          shadowColor: Colors.black.withOpacityCompat(0.2),
         ),
       ),
       textTheme: const TextTheme(
@@ -107,3 +108,9 @@ class AppTheme {
   }
 }
 
+// Extension to provide compatibility for opacity operations
+extension ColorWithOpacityCompat on Color {
+  Color withOpacityCompat(double opacity) {
+    return withAlpha((opacity * 255).round());
+  }
+}

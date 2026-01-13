@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../../core/app_theme.dart';
 import '../../../../../../core/models/user_model.dart';
-import '../../../../../../core/models/complaint_model.dart';
 import '../../bloc/user_bloc.dart';
 import 'add_visitor_dialog.dart';
 import 'raise_complaint_dialog.dart';

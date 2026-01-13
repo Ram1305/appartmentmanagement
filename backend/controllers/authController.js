@@ -845,7 +845,26 @@ const getAllUsers = async (req, res) => {
 // @access  Public (should be protected in production)
 const toggleUserActive = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const id = req.params.id;
+
+    // Search across all user collections to support toggling any account type
+    const modelMap = [
+      { Model: Admin, type: 'admin' },
+      { Model: Manager, type: 'manager' },
+      { Model: Security, type: 'security' },
+      { Model: User, type: 'user' },
+    ];
+
+    let user = null;
+    let foundType = null;
+    for (const { Model, type } of modelMap) {
+      user = await Model.findById(id);
+      if (user) {
+        foundType = type;
+        console.log(`Found user in ${type} collection for toggling`);
+        break;
+      }
+    }
 
     if (!user) {
       return res.status(404).json({
@@ -859,12 +878,12 @@ const toggleUserActive = async (req, res) => {
 
     res.json({
       success: true,
-      message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`,
+      message: `${foundType.charAt(0).toUpperCase() + foundType.slice(1)} ${user.isActive ? 'activated' : 'deactivated'} successfully`,
       user: {
         id: user._id.toString(),
         name: user.name,
         email: user.email,
-        userType: user.userType,
+        userType: user.userType || foundType,
         isActive: user.isActive,
       },
     });

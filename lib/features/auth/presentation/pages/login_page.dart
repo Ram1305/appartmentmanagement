@@ -75,16 +75,16 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     // Prevent double taps
     if (_isLoading) return;
-    
+
     // Unfocus text fields
     _emailFocusNode.unfocus();
     _passwordFocusNode.unfocus();
-    
+
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
-      
+
       // Ensure user type is set - if not, try to get it from route arguments
       UserType? userType = _selectedUserType;
       if (userType == null) {
@@ -99,13 +99,13 @@ class _LoginPageState extends State<LoginPage> {
           userType = UserType.user;
         }
       }
-      
-      print('=== FRONTEND LOGIN ATTEMPT ===');
-      print('Email: ${_emailController.text.trim()}');
-      print('UserType: $userType');
-      print('UserType.name: ${userType.name}');
-      print('Selected UserType: $_selectedUserType');
-      
+
+      debugPrint('=== FRONTEND LOGIN ATTEMPT ===');
+      debugPrint('Email: ${_emailController.text.trim()}');
+      debugPrint('UserType: $userType');
+      debugPrint('UserType.name: ${userType.name}');
+      debugPrint('Selected UserType: $_selectedUserType');
+
       context.read<AuthBloc>().add(
             LoginEvent(
               email: _emailController.text.trim(),
@@ -117,42 +117,42 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateToDashboard(UserModel user) {
-    print('=== NAVIGATE TO DASHBOARD ===');
-    print('User name: ${user.name}');
-    print('User email: ${user.email}');
-    print('User userType: ${user.userType}');
-    print('User userType.name: ${user.userType.name}');
-    print('User status: ${user.status}');
-    
+    debugPrint('=== NAVIGATE TO DASHBOARD ===');
+    debugPrint('User name: ${user.name}');
+    debugPrint('User email: ${user.email}');
+    debugPrint('User userType: ${user.userType}');
+    debugPrint('User userType.name: ${user.userType.name}');
+    debugPrint('User status: ${user.status}');
+
     String route = AppRoutes.login;
     switch (user.userType) {
       case UserType.admin:
         route = AppRoutes.adminDashboard;
-        print('Selected route: $route (Admin Dashboard)');
+        debugPrint('Selected route: $route (Admin Dashboard)');
         break;
       case UserType.manager:
         route = AppRoutes.managerDashboard;
-        print('Selected route: $route (Manager Dashboard)');
+        debugPrint('Selected route: $route (Manager Dashboard)');
         break;
       case UserType.user:
         route = AppRoutes.userDashboard;
-        print('Selected route: $route (User Dashboard)');
+        debugPrint('Selected route: $route (User Dashboard)');
         break;
       case UserType.security:
         route = AppRoutes.securityDashboard;
-        print('Selected route: $route (Security Dashboard)');
+        debugPrint('Selected route: $route (Security Dashboard)');
         break;
       default:
-        print('WARNING: Unknown userType, defaulting to login');
+        debugPrint('WARNING: Unknown userType, defaulting to login');
         route = AppRoutes.login;
     }
-    
-    print('Navigating to: $route');
+
+    debugPrint('Navigating to: $route');
     try {
       Navigator.pushReplacementNamed(context, route);
-      print('✓ Navigation successful');
+      debugPrint('✓ Navigation successful');
     } catch (e) {
-      print('✗ Navigation error: $e');
+      debugPrint('✗ Navigation error: $e');
     }
   }
 
@@ -186,39 +186,41 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: AppTheme.backgroundColor,
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
-          print('=== LOGIN PAGE STATE CHANGE ===');
-          print('State: ${state.runtimeType}');
-          
+          debugPrint('=== LOGIN PAGE STATE CHANGE ===');
+          debugPrint('State: ${state.runtimeType}');
+
           if (state is AuthAuthenticated) {
-            print('✓ Login successful!');
-            print('User: ${state.user.name}');
-            print('UserType: ${state.user.userType}');
-            print('Status: ${state.user.status}');
+            debugPrint('✓ Login successful!');
+            debugPrint('User: ${state.user.name}');
+            debugPrint('UserType: ${state.user.userType}');
+            debugPrint('Status: ${state.user.status}');
             setState(() {
               _isLoading = false;
             });
             // Check user status - if pending, show waiting page; if approved, go to dashboard
             if (state.user.status == AccountStatus.pending) {
-              Navigator.pushReplacementNamed(context, AppRoutes.waitingApproval);
+              Navigator.pushReplacementNamed(
+                  context, AppRoutes.waitingApproval);
             } else if (state.user.status == AccountStatus.approved) {
               _navigateToDashboard(state.user);
             } else if (state.user.status == AccountStatus.rejected) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Your account has been rejected. Please contact administrator.'),
+                  content: Text(
+                      'Your account has been rejected. Please contact administrator.'),
                   backgroundColor: AppTheme.errorColor,
                   duration: Duration(seconds: 4),
                 ),
               );
             }
           } else if (state is AuthUnauthenticated) {
-            print('User unauthenticated');
+            debugPrint('User unauthenticated');
             setState(() {
               _isLoading = false;
             });
             // User logged out, already on login page
           } else if (state is AuthError) {
-            print('✗ Login error: ${state.message}');
+            debugPrint('✗ Login error: ${state.message}');
             setState(() {
               _isLoading = false;
             });
@@ -246,24 +248,22 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 20),
                   // Logo with gradient background
-                Container(
-
-                  decoration: BoxDecoration(
-                    color: Colors.white, // or AppTheme.primaryColor
-                    borderRadius: BorderRadius.circular(10),
-
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      'assets/appicon.png',
-                      width: 150,
-                      height: 150,
-                      fit: BoxFit.contain,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white, // or AppTheme.primaryColor
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/appicon.png',
+                        width: 150,
+                        height: 150,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
                   const Text(
                     'Welcome Back',
                     style: TextStyle(
@@ -368,11 +368,13 @@ class _LoginPageState extends State<LoginPage> {
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
                         ),
-                        onPressed: _isLoading ? null : () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
                       ),
                     ),
                     validator: (value) {
@@ -411,8 +413,8 @@ class _LoginPageState extends State<LoginPage> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                               : const Text(
@@ -427,7 +429,8 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   // Only show registration link for regular users
-                  if (_selectedUserType == UserType.user || _selectedUserType == null) ...[
+                  if (_selectedUserType == UserType.user ||
+                      _selectedUserType == null) ...[
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -439,9 +442,12 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         TextButton(
-                          onPressed: _isLoading ? null : () {
-                            Navigator.pushNamed(context, AppRoutes.userRegistration);
-                          },
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.pushNamed(
+                                      context, AppRoutes.userRegistration);
+                                },
                           child: const Text('Register as User'),
                         ),
                       ],
@@ -479,4 +485,3 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 }
-

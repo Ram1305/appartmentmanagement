@@ -8,6 +8,7 @@ import '../../../../core/models/block_model.dart';
 import '../../../../core/models/user_model.dart';
 import '../../../../features/auth/data/repositories/auth_repository.dart';
 import '../../../../core/services/api_service.dart';
+import 'package:flutter/foundation.dart';
 
 // Events
 abstract class AdminEvent extends Equatable {
@@ -35,7 +36,8 @@ class CreateBlockEvent extends AdminEvent {
 class AddFloorEvent extends AdminEvent {
   final String blockId;
   final String floorNumber;
-  final List<Map<String, dynamic>> roomConfigurations; // [{type: '1BHK', count: 4}, {type: '2BHK', count: 2}]
+  final List<Map<String, dynamic>>
+      roomConfigurations; // [{type: '1BHK', count: 4}, {type: '2BHK', count: 2}]
   final String? roomNumber; // Optional specific room number for single room
 
   const AddFloorEvent({
@@ -46,7 +48,8 @@ class AddFloorEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [blockId, floorNumber, roomConfigurations, roomNumber];
+  List<Object?> get props =>
+      [blockId, floorNumber, roomConfigurations, roomNumber];
 }
 
 class AddRoomEvent extends AdminEvent {
@@ -138,7 +141,8 @@ class AddManagerEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [name, email, mobileNumber, password, profilePic, idProof];
+  List<Object?> get props =>
+      [name, email, mobileNumber, password, profilePic, idProof];
 }
 
 class UpdateManagerEvent extends AdminEvent {
@@ -161,7 +165,8 @@ class UpdateManagerEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [managerId, name, email, mobileNumber, password, profilePic, idProof];
+  List<Object?> get props =>
+      [managerId, name, email, mobileNumber, password, profilePic, idProof];
 }
 
 class DeleteManagerEvent extends AdminEvent {
@@ -191,7 +196,8 @@ class AddSecurityEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [name, email, mobileNumber, password, profilePic, idProof];
+  List<Object?> get props =>
+      [name, email, mobileNumber, password, profilePic, idProof];
 }
 
 class UpdateSecurityEvent extends AdminEvent {
@@ -214,7 +220,8 @@ class UpdateSecurityEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [securityId, name, email, mobileNumber, password, profilePic, idProof];
+  List<Object?> get props =>
+      [securityId, name, email, mobileNumber, password, profilePic, idProof];
 }
 
 class DeleteSecurityEvent extends AdminEvent {
@@ -246,7 +253,8 @@ class AddUserEvent extends AdminEvent {
   });
 
   @override
-  List<Object?> get props => [name, email, mobileNumber, block, floor, roomNumber, familyType];
+  List<Object?> get props =>
+      [name, email, mobileNumber, block, floor, roomNumber, familyType];
 }
 
 class BlockUserEvent extends AdminEvent {
@@ -322,7 +330,8 @@ class AdminLoaded extends AdminState {
   });
 
   @override
-  List<Object?> get props => [blocks, allUsers, managers, securityStaff, regularUsers];
+  List<Object?> get props =>
+      [blocks, allUsers, managers, securityStaff, regularUsers];
 }
 
 class AdminError extends AdminState {
@@ -336,7 +345,6 @@ class AdminError extends AdminState {
 
 // BLoC
 class AdminBloc extends Bloc<AdminEvent, AdminState> {
-  static const String _blocksKey = 'blocks_list';
   final AuthRepository _authRepository = AuthRepository();
   final ApiService _apiService = ApiService();
 
@@ -374,17 +382,21 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       // Fetch blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
 
       // Fetch users from backend
       final users = await _authRepository.getAllUsers();
-      final managers = users.where((u) => u.userType == UserType.manager).toList();
-      final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-      final regularUsers = users.where((u) => u.userType == UserType.user).toList();
-      
+      final managers =
+          users.where((u) => u.userType == UserType.manager).toList();
+      final securityStaff =
+          users.where((u) => u.userType == UserType.security).toList();
+      final regularUsers =
+          users.where((u) => u.userType == UserType.user).toList();
+
       emit(AdminLoaded(
         blocks: blocks,
         allUsers: users,
@@ -405,9 +417,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       final currentState = state;
       if (currentState is AdminLoaded) {
         final users = await _authRepository.getAllUsers();
-        final managers = users.where((u) => u.userType == UserType.manager).toList();
-        final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-        final regularUsers = users.where((u) => u.userType == UserType.user).toList();
+        final managers =
+            users.where((u) => u.userType == UserType.manager).toList();
+        final securityStaff =
+            users.where((u) => u.userType == UserType.security).toList();
+        final regularUsers =
+            users.where((u) => u.userType == UserType.user).toList();
         emit(AdminLoaded(
           blocks: currentState.blocks,
           allUsers: users,
@@ -427,30 +442,72 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     try {
       final users = await _authRepository.getAllUsers();
-      
+
       // Indian names list - comprehensive
       final indianNames = [
-        'Rajesh Kumar', 'Priya Sharma', 'Amit Patel', 'Sneha Reddy', 'Vikram Singh',
-        'Anjali Gupta', 'Rahul Verma', 'Kavita Nair', 'Suresh Iyer', 'Meera Joshi',
-        'Arjun Desai', 'Divya Menon', 'Karan Malhotra', 'Pooja Kapoor', 'Nikhil Rao',
-        'Shreya Agarwal', 'Rohan Mehta', 'Neha Chaturvedi', 'Aditya Shah', 'Tanvi Trivedi',
-        'Vishal Pandey', 'Isha Bansal', 'Manish Tiwari', 'Riya Saxena', 'Harsh Dubey',
-        'Ananya Mishra', 'Siddharth Jain', 'Kritika Sinha', 'Abhishek Yadav', 'Swati Goyal',
-        'Varun Khanna', 'Aishwarya Rana', 'Kunal Bhatia', 'Ritika Chopra', 'Mohit Agarwal',
-        'Sakshi Dutta', 'Ravi Shankar', 'Nisha Varma', 'Gaurav Oberoi', 'Preeti Nanda',
-        'Deepak Sharma', 'Sunita Mehta', 'Ramesh Kumar', 'Kiran Patel', 'Lakshmi Reddy',
-        'Suresh Kumar', 'Geeta Singh', 'Manoj Verma', 'Radha Nair', 'Venkatesh Iyer',
+        'Rajesh Kumar',
+        'Priya Sharma',
+        'Amit Patel',
+        'Sneha Reddy',
+        'Vikram Singh',
+        'Anjali Gupta',
+        'Rahul Verma',
+        'Kavita Nair',
+        'Suresh Iyer',
+        'Meera Joshi',
+        'Arjun Desai',
+        'Divya Menon',
+        'Karan Malhotra',
+        'Pooja Kapoor',
+        'Nikhil Rao',
+        'Shreya Agarwal',
+        'Rohan Mehta',
+        'Neha Chaturvedi',
+        'Aditya Shah',
+        'Tanvi Trivedi',
+        'Vishal Pandey',
+        'Isha Bansal',
+        'Manish Tiwari',
+        'Riya Saxena',
+        'Harsh Dubey',
+        'Ananya Mishra',
+        'Siddharth Jain',
+        'Kritika Sinha',
+        'Abhishek Yadav',
+        'Swati Goyal',
+        'Varun Khanna',
+        'Aishwarya Rana',
+        'Kunal Bhatia',
+        'Ritika Chopra',
+        'Mohit Agarwal',
+        'Sakshi Dutta',
+        'Ravi Shankar',
+        'Nisha Varma',
+        'Gaurav Oberoi',
+        'Preeti Nanda',
+        'Deepak Sharma',
+        'Sunita Mehta',
+        'Ramesh Kumar',
+        'Kiran Patel',
+        'Lakshmi Reddy',
+        'Suresh Kumar',
+        'Geeta Singh',
+        'Manoj Verma',
+        'Radha Nair',
+        'Venkatesh Iyer',
       ];
 
       // Check if dummy data already exists
-      final existingUsers = users.where((u) => u.userType == UserType.user).length;
+      final existingUsers =
+          users.where((u) => u.userType == UserType.user).length;
       if (existingUsers < 20) {
         // Create dummy users
         for (int i = 0; i < indianNames.length; i++) {
           final name = indianNames[i];
-          final email = '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
+          final email =
+              '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
           final mobile = '9${(1000000000 + i).toString().substring(1)}';
-          
+
           final user = UserModel(
             id: 'user_${DateTime.now().millisecondsSinceEpoch}_$i',
             name: name,
@@ -458,26 +515,32 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
             email: email,
             mobileNumber: mobile,
             userType: UserType.user,
-            status: i % 3 == 0 ? AccountStatus.approved : (i % 3 == 1 ? AccountStatus.pending : AccountStatus.rejected),
+            status: i % 3 == 0
+                ? AccountStatus.approved
+                : (i % 3 == 1 ? AccountStatus.pending : AccountStatus.rejected),
             block: ['A', 'B', 'C'][i % 3],
             floor: '${(i % 5) + 1}',
             roomNumber: '${(i % 10) + 1}',
             familyType: i % 2 == 0 ? FamilyType.family : FamilyType.bachelor,
           );
-          
+
           await _authRepository.saveUser(user);
         }
 
         // Create dummy managers with Indian names
         final managerNames = [
-          'Rajesh Kumar Manager', 'Priya Sharma Manager', 'Amit Patel Manager',
-          'Sneha Reddy Manager', 'Vikram Singh Manager'
+          'Rajesh Kumar Manager',
+          'Priya Sharma Manager',
+          'Amit Patel Manager',
+          'Sneha Reddy Manager',
+          'Vikram Singh Manager'
         ];
         for (int i = 0; i < managerNames.length; i++) {
           final name = managerNames[i];
-          final email = '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
+          final email =
+              '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
           final mobile = '8${(1000000000 + i).toString().substring(1)}';
-          
+
           final manager = UserModel(
             id: 'manager_${DateTime.now().millisecondsSinceEpoch}_$i',
             name: name,
@@ -487,20 +550,25 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
             userType: UserType.manager,
             status: AccountStatus.approved,
           );
-          
+
           await _authRepository.saveUser(manager);
         }
 
         // Create dummy security with Indian names
         final securityNames = [
-          'Vikram Singh Security', 'Suresh Kumar Security', 'Ravi Shankar Security',
-          'Manoj Verma Security', 'Venkatesh Iyer Security', 'Deepak Sharma Security'
+          'Vikram Singh Security',
+          'Suresh Kumar Security',
+          'Ravi Shankar Security',
+          'Manoj Verma Security',
+          'Venkatesh Iyer Security',
+          'Deepak Sharma Security'
         ];
         for (int i = 0; i < securityNames.length; i++) {
           final name = securityNames[i];
-          final email = '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
+          final email =
+              '${name.toLowerCase().replaceAll(' ', '.')}@apartment.com';
           final mobile = '7${(1000000000 + i).toString().substring(1)}';
-          
+
           final security = UserModel(
             id: 'security_${DateTime.now().millisecondsSinceEpoch}_$i',
             name: name,
@@ -510,10 +578,10 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
             userType: UserType.security,
             status: AccountStatus.approved,
           );
-          
+
           await _authRepository.saveUser(security);
         }
-        
+
         // Create dummy blocks if they don't exist
         final blocks = await _getBlocks();
         if (blocks.isEmpty) {
@@ -546,7 +614,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(AdminLoading());
     try {
       final username = event.name.toLowerCase().replaceAll(' ', '_');
-      
+
       final response = await _apiService.registerUser(
         name: event.name,
         username: username,
@@ -557,13 +625,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         profilePic: event.profilePic,
         aadhaarFront: event.idProof, // Using aadhaarFront field for ID proof
       );
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to add manager'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to add manager'));
         }
       }
     } catch (e) {
@@ -589,13 +658,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         profilePic: event.profilePic,
         idProof: event.idProof,
       );
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to update manager'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to update manager'));
         }
       }
     } catch (e) {
@@ -613,13 +683,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(AdminLoading());
     try {
       final response = await _apiService.deleteManager(event.managerId);
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to delete manager'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to delete manager'));
         }
       }
     } catch (e) {
@@ -637,7 +708,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(AdminLoading());
     try {
       final username = event.name.toLowerCase().replaceAll(' ', '_');
-      
+
       final response = await _apiService.registerUser(
         name: event.name,
         username: username,
@@ -648,13 +719,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         profilePic: event.profilePic,
         aadhaarFront: event.idProof, // Using aadhaarFront field for ID proof
       );
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to add security staff'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to add security staff'));
         }
       }
     } catch (e) {
@@ -680,13 +752,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         profilePic: event.profilePic,
         idProof: event.idProof,
       );
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to update security staff'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to update security staff'));
         }
       }
     } catch (e) {
@@ -704,13 +777,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(AdminLoading());
     try {
       final response = await _apiService.deleteSecurity(event.securityId);
-      
+
       if (response['success'] == true) {
         add(LoadAllUsersEvent());
         add(LoadBlocksEvent());
       } else {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to delete security staff'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to delete security staff'));
         }
       }
     } catch (e) {
@@ -738,7 +812,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         roomNumber: event.roomNumber,
         familyType: event.familyType,
       );
-      
+
       await _authRepository.saveUser(user);
       add(LoadAllUsersEvent());
     } catch (e) {
@@ -809,59 +883,63 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (!isClosed) {
         emit(AdminLoading());
       }
-      
+
       // Create block via backend API
       final response = await _apiService.createBlock(event.blockName);
-      
+
       if (response['success'] != true) {
         if (!isClosed) {
-          emit(AdminError(message: response['error'] ?? 'Failed to create block'));
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to create block'));
         }
         return;
       }
 
-      final blockId = response['block']?['_id']?.toString() ?? response['block']?['id']?.toString();
-      
+      final blockId = response['block']?['_id']?.toString() ??
+          response['block']?['id']?.toString();
+
       if (blockId == null) {
         if (!isClosed) {
           emit(AdminError(message: 'Failed to get block ID after creation'));
         }
         return;
       }
-      
+
       // If number of floors is provided, create that many floors
       if (event.numberOfFloors != null && event.numberOfFloors! > 0) {
         int successCount = 0;
         int failCount = 0;
-        
+
         // Create floors from 1 to numberOfFloors
         for (int i = 1; i <= event.numberOfFloors!; i++) {
           if (isClosed) break; // Stop if bloc is closed
-          
+
           try {
             final floorResponse = await _apiService.addFloor(
               blockId: blockId,
               floorNumber: i.toString(),
               roomConfigurations: [], // Empty floor, rooms will be added later
             );
-            
+
             // Check if floor creation was successful
             if (floorResponse['success'] == true) {
               successCount++;
             } else {
               failCount++;
-              print('Failed to create floor $i: ${floorResponse['error']}');
+              debugPrint(
+                  'Failed to create floor $i: ${floorResponse['error']}');
             }
           } catch (e) {
             failCount++;
-            print('Error creating floor $i: $e');
+            debugPrint('Error creating floor $i: $e');
           }
         }
-        
+
         // If all floors failed, show error but still continue
         if (failCount == event.numberOfFloors! && successCount == 0) {
           if (!isClosed) {
-            emit(AdminError(message: 'Block created but failed to create floors'));
+            emit(AdminError(
+                message: 'Block created but failed to create floors'));
             return;
           }
         }
@@ -869,20 +947,24 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
       // Reload blocks from backend
       if (isClosed) return;
-      
+
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
-      
+
       // Get users
       final users = await _authRepository.getAllUsers();
-      final managers = users.where((u) => u.userType == UserType.manager).toList();
-      final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-      final regularUsers = users.where((u) => u.userType == UserType.user).toList();
-      
+      final managers =
+          users.where((u) => u.userType == UserType.manager).toList();
+      final securityStaff =
+          users.where((u) => u.userType == UserType.security).toList();
+      final regularUsers =
+          users.where((u) => u.userType == UserType.user).toList();
+
       // Emit loaded state
       if (!isClosed) {
         emit(AdminLoaded(
@@ -906,7 +988,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     try {
       final currentState = state;
-      
+
       // Add floor via backend API
       final response = await _apiService.addFloor(
         blockId: event.blockId,
@@ -914,7 +996,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         roomConfigurations: event.roomConfigurations,
         roomNumber: event.roomNumber,
       );
-      
+
       if (response['success'] != true) {
         emit(AdminError(message: response['error'] ?? 'Failed to add floor'));
         return;
@@ -923,16 +1005,20 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
-      
+
       if (currentState is AdminLoaded) {
         final users = await _authRepository.getAllUsers();
-        final managers = users.where((u) => u.userType == UserType.manager).toList();
-        final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-        final regularUsers = users.where((u) => u.userType == UserType.user).toList();
+        final managers =
+            users.where((u) => u.userType == UserType.manager).toList();
+        final securityStaff =
+            users.where((u) => u.userType == UserType.security).toList();
+        final regularUsers =
+            users.where((u) => u.userType == UserType.user).toList();
         emit(AdminLoaded(
           blocks: blocks,
           allUsers: users,
@@ -942,9 +1028,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ));
       } else {
         final users = await _authRepository.getAllUsers();
-          final managers = users.where((u) => u.userType == UserType.manager).toList();
-          final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-          final regularUsers = users.where((u) => u.userType == UserType.user).toList();
+        final managers =
+            users.where((u) => u.userType == UserType.manager).toList();
+        final securityStaff =
+            users.where((u) => u.userType == UserType.security).toList();
+        final regularUsers =
+            users.where((u) => u.userType == UserType.user).toList();
         emit(AdminLoaded(
           blocks: blocks,
           allUsers: users,
@@ -967,17 +1056,27 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (currentState is! AdminLoaded) return;
 
       final response = await _apiService.toggleUserActive(event.userId);
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to toggle user status'));
+        final err = response['error'] ?? '';
+        // If user not found on server (likely a local-only/dummy user), reload users to sync UI
+        if (err.toLowerCase().contains('not found')) {
+          add(LoadAllUsersEvent());
+          return;
+        }
+        emit(AdminError(
+            message: err.isNotEmpty ? err : 'Failed to toggle user status'));
         return;
       }
 
       // Reload users from backend
       final users = await _authRepository.getAllUsers();
-      final managers = users.where((u) => u.userType == UserType.manager).toList();
-      final securityStaff = users.where((u) => u.userType == UserType.security).toList();
-      final regularUsers = users.where((u) => u.userType == UserType.user).toList();
+      final managers =
+          users.where((u) => u.userType == UserType.manager).toList();
+      final securityStaff =
+          users.where((u) => u.userType == UserType.security).toList();
+      final regularUsers =
+          users.where((u) => u.userType == UserType.user).toList();
 
       emit(AdminLoaded(
         blocks: currentState.blocks,
@@ -1000,16 +1099,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (currentState is! AdminLoaded) return;
 
       final response = await _apiService.toggleBlockActive(event.blockId);
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to toggle block status'));
+        emit(AdminError(
+            message: response['error'] ?? 'Failed to toggle block status'));
         return;
       }
 
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1040,7 +1141,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         roomNumber: event.roomNumber,
         roomType: event.roomType,
       );
-      
+
       if (response['success'] != true) {
         emit(AdminError(message: response['error'] ?? 'Failed to add room'));
         return;
@@ -1049,7 +1150,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1075,16 +1177,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (currentState is! AdminLoaded) return;
 
       final response = await _apiService.updateBlock(event.blockId, event.name);
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to update block'));
+        emit(
+            AdminError(message: response['error'] ?? 'Failed to update block'));
         return;
       }
 
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1110,16 +1214,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (currentState is! AdminLoaded) return;
 
       final response = await _apiService.deleteBlock(event.blockId);
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to delete block'));
+        emit(
+            AdminError(message: response['error'] ?? 'Failed to delete block'));
         return;
       }
 
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1149,16 +1255,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         floorId: event.floorId,
         floorNumber: event.floorNumber,
       );
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to update floor'));
+        emit(
+            AdminError(message: response['error'] ?? 'Failed to update floor'));
         return;
       }
 
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1187,16 +1295,18 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         blockId: event.blockId,
         floorId: event.floorId,
       );
-      
+
       if (response['success'] != true) {
-        emit(AdminError(message: response['error'] ?? 'Failed to delete floor'));
+        emit(
+            AdminError(message: response['error'] ?? 'Failed to delete floor'));
         return;
       }
 
       // Reload blocks from backend
       final blocksResponse = await _apiService.getAllBlocks();
       final List<BlockModel> blocks = [];
-      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
         final List<dynamic> blocksList = blocksResponse['blocks'];
         blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
       }
@@ -1230,4 +1340,3 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     // Keeping for backward compatibility
   }
 }
-

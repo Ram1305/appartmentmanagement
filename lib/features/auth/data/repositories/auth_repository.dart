@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/models/user_model.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/services/api_service.dart';
 
 class AuthRepository {
@@ -53,39 +54,39 @@ class AuthRepository {
     UserType? userType,
   ]) async {
     try {
-      print('=== AUTH REPOSITORY LOGIN ===');
-      print('Email: $email');
-      print('UserType enum: $userType');
-      print('UserType.name: ${userType?.name}');
-      print('Sending to API service...');
-      
+      debugPrint('=== AUTH REPOSITORY LOGIN ===');
+      debugPrint('Email: $email');
+      debugPrint('UserType enum: $userType');
+      debugPrint('UserType.name: ${userType?.name}');
+      debugPrint('Sending to API service...');
+
       final response = await _apiService.login(
         email: email,
         password: password,
         userType: userType?.name,
       );
 
-      print('=== API RESPONSE ===');
-      print('Success: ${response['success']}');
-      print('Error: ${response['error']}');
-      print('User data: ${response['user']}');
+      debugPrint('=== API RESPONSE ===');
+      debugPrint('Success: ${response['success']}');
+      debugPrint('Error: ${response['error']}');
+      debugPrint('User data: ${response['user']}');
 
       if (response['success'] == true && response['user'] != null) {
         final userData = response['user'];
-        print('Parsing user data...');
-        print('User userType from response: ${userData['userType']}');
+        debugPrint('Parsing user data...');
+        debugPrint('User userType from response: ${userData['userType']}');
         final user = UserModel.fromJson(userData);
-        print('Parsed user userType: ${user.userType}');
+        debugPrint('Parsed user userType: ${user.userType}');
         await saveCurrentUser(user);
-        print('User saved successfully');
+        debugPrint('User saved successfully');
         return user;
       } else {
-        print('Login failed: ${response['error']}');
+        debugPrint('Login failed: ${response['error']}');
         throw Exception(response['error'] ?? 'Login failed');
       }
     } catch (e) {
-      print('=== LOGIN ERROR ===');
-      print('Error: $e');
+      debugPrint('=== LOGIN ERROR ===');
+      debugPrint('Error: $e');
       throw Exception(e.toString());
     }
   }
@@ -189,7 +190,9 @@ class AuthRepository {
       final response = await _apiService.getAllUsers();
       if (response['success'] == true && response['users'] != null) {
         final List<dynamic> usersList = response['users'];
-        return usersList.map((userJson) => UserModel.fromJson(userJson)).toList();
+        return usersList
+            .map((userJson) => UserModel.fromJson(userJson))
+            .toList();
       }
       return [];
     } catch (e) {

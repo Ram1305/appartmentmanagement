@@ -1,8 +1,12 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 enum UserType { admin, manager, user, security }
+
 enum AccountStatus { pending, approved, rejected }
+
 enum FamilyType { family, bachelor }
+
 enum Gender { male, female, other }
 
 class UserModel extends Equatable {
@@ -84,14 +88,16 @@ class UserModel extends Equatable {
       username: username ?? this.username,
       email: email ?? this.email,
       mobileNumber: mobileNumber ?? this.mobileNumber,
-      secondaryMobileNumber: secondaryMobileNumber ?? this.secondaryMobileNumber,
+      secondaryMobileNumber:
+          secondaryMobileNumber ?? this.secondaryMobileNumber,
       gender: gender ?? this.gender,
       userType: userType ?? this.userType,
       status: status ?? this.status,
       profilePic: profilePic ?? this.profilePic,
       address: address ?? this.address,
       aadhaarCard: aadhaarCard ?? this.aadhaarCard,
-      aadhaarCardFrontImage: aadhaarCardFrontImage ?? this.aadhaarCardFrontImage,
+      aadhaarCardFrontImage:
+          aadhaarCardFrontImage ?? this.aadhaarCardFrontImage,
       aadhaarCardBackImage: aadhaarCardBackImage ?? this.aadhaarCardBackImage,
       panCard: panCard ?? this.panCard,
       panCardImage: panCardImage ?? this.panCardImage,
@@ -148,30 +154,34 @@ class UserModel extends Equatable {
             )
           : null,
       userType: () {
-        final userTypeStr = json['userType']?.toString().toLowerCase()?.trim();
-        print('=== PARSING USERTYPE ===');
-        print('Raw userType from JSON: ${json['userType']}');
-        print('Normalized userType: "$userTypeStr"');
-        print('Available UserType values: ${UserType.values.map((e) => e.name).toList()}');
-        
+        final userTypeStr = json['userType']?.toString().toLowerCase().trim();
+        debugPrint('=== PARSING USERTYPE ===');
+        debugPrint('Raw userType from JSON: ${json['userType']}');
+        debugPrint('Normalized userType: "$userTypeStr"');
+        debugPrint(
+            'Available UserType values: ${UserType.values.map((e) => e.name).toList()}');
+
         if (userTypeStr == null || userTypeStr.isEmpty) {
-          print('WARNING: userType is null or empty, defaulting to UserType.user');
+          debugPrint(
+              'WARNING: userType is null or empty, defaulting to UserType.user');
           return UserType.user;
         }
-        
+
         try {
           final parsed = UserType.values.firstWhere(
             (e) => e.name.toLowerCase() == userTypeStr,
             orElse: () {
-              print('WARNING: userType "$userTypeStr" not found in enum, defaulting to UserType.user');
-              print('Trying to match: "$userTypeStr" against: ${UserType.values.map((e) => e.name).toList()}');
+              debugPrint(
+                  'WARNING: userType "$userTypeStr" not found in enum, defaulting to UserType.user');
+              debugPrint(
+                  'Trying to match: "$userTypeStr" against: ${UserType.values.map((e) => e.name).toList()}');
               return UserType.user;
             },
           );
-          print('✓ Successfully parsed UserType: $parsed (${parsed.name})');
+          debugPrint('✓ Successfully parsed UserType: $parsed (${parsed.name})');
           return parsed;
         } catch (e) {
-          print('ERROR parsing userType: $e');
+          debugPrint('ERROR parsing userType: $e');
           return UserType.user;
         }
       }(),
@@ -226,4 +236,3 @@ class UserModel extends Equatable {
         isActive,
       ];
 }
-
