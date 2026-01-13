@@ -274,28 +274,25 @@ const loginUser = async (req, res) => {
 
     // Update userType if it doesn't match the collection (for data consistency)
     // Note: Security model has immutable userType, so we skip update for security users
-    if (!user.userType || user.userType !== foundModelType) {
+    if (foundModelType !== 'security' && (!user.userType || user.userType !== foundModelType)) {
       console.log('Updating userType to match found model type...');
-      // Only try to update if it's not a security user (security has immutable userType)
-      if (foundModelType !== 'security') {
-        user.userType = foundModelType;
-        // Only update status if it's admin or manager
-        if (foundModelType === 'admin' || foundModelType === 'manager') {
-          user.status = 'approved';
-          console.log('Setting status to approved for admin/manager');
-        }
-        try {
-          await user.save();
-          console.log('✓ UserType updated successfully in database');
-        } catch (saveError) {
-          // If save fails, just continue with the actualUserType
-          console.log('⚠ Note: Could not update userType in database, using actual userType:', actualUserType);
-          console.log('Save error:', saveError.message);
-        }
-      } else {
-        // For security users, userType is immutable, so we just use foundModelType
-        console.log('⚠ Security userType is immutable, using foundModelType:', foundModelType);
+      user.userType = foundModelType;
+      // Only update status if it's admin or manager
+      if (foundModelType === 'admin' || foundModelType === 'manager') {
+        user.status = 'approved';
+        console.log('Setting status to approved for admin/manager');
       }
+      try {
+        await user.save();
+        console.log('✓ UserType updated successfully in database');
+      } catch (saveError) {
+        // If save fails, just continue with the actualUserType
+        console.log('⚠ Note: Could not update userType in database, using actual userType:', actualUserType);
+        console.log('Save error:', saveError.message);
+      }
+    } else if (foundModelType === 'security') {
+      // For security users, userType is immutable, so we just use foundModelType
+      console.log('✓ Security userType is immutable, skipping update');
     } else {
       console.log('✓ UserType already matches found model type');
     }
