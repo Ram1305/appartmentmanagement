@@ -38,11 +38,19 @@ const createAd = async (req, res) => {
       ? parseInt(req.body.displayOrder, 10)
       : 0;
 
+    // Ensure adminId is set (should be set by requireAdmin middleware)
+    if (!req.adminId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized. Admin access required.',
+      });
+    }
+
     const ad = await Ad.create({
       image: imageUrl,
       displayOrder: isNaN(displayOrder) ? 0 : displayOrder,
       isActive: true,
-      createdBy: req.adminId || req.userId,
+      createdBy: req.adminId,
     });
 
     res.status(201).json({
