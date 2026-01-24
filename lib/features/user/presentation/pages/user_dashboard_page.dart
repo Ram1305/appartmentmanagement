@@ -41,7 +41,12 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             body: IndexedStack(
               index: _currentIndex,
               children: [
-                HomeTab(user: authState.user),
+                HomeTab(
+                  user: authState.user,
+                  onSwitchToComplaints: () {
+                    setState(() => _currentIndex = 2);
+                  },
+                ),
                 const EventsTab(),
                 ComplaintsTab(userId: authState.user.id),
                 ProfileTab(user: authState.user),

@@ -1,519 +1,318 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../../core/app_theme.dart';
+import '../../../../../../core/models/ad_model.dart';
 import '../../../../../../core/models/user_model.dart';
-import '../../bloc/user_bloc.dart';
-import 'add_visitor_dialog.dart';
+import '../../../../../../core/routes/app_routes.dart';
+import '../../../../../../core/services/api_service.dart';
 import 'raise_complaint_dialog.dart';
-import '../visitor_details_page.dart';
+import '../visitors_page.dart';
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   final UserModel user;
+  final VoidCallback? onSwitchToComplaints;
 
-  const HomeTab({super.key, required this.user});
+  const HomeTab({
+    super.key,
+    required this.user,
+    this.onSwitchToComplaints,
+  });
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  final ApiService _apiService = ApiService();
+  final ScrollController _scrollController = ScrollController();
+  final PageController _pageController = PageController();
+  List<AdModel> _ads = [];
+  bool _adsLoading = true;
+  Timer? _carouselTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAds();
+  }
+
+  @override
+  void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAds() async {
+    setState(() => _adsLoading = true);
+    try {
+      final response = await _apiService.getAds();
+      if (mounted && response['success'] == true && response['ads'] != null) {
+        setState(() {
+          _ads = (response['ads'] as List)
+              .map((e) => AdModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          _adsLoading = false;
+        });
+        if (_ads.length > 1) _startCarouselTimer();
+      } else {
+        if (mounted) setState(() => _adsLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _adsLoading = false);
+    }
+  }
+
+  void _startCarouselTimer() {
+    _carouselTimer?.cancel();
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_pageController.hasClients || _ads.isEmpty) return;
+      final next = (_pageController.page?.round() ?? 0) + 1;
+      if (next >= _ads.length) {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _navigateToComingSoon(String featureName) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.featureComingSoon,
+      arguments: {'featureName': featureName},
+    );
+  }
+
+  void _showRaiseComplaintDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => RaiseComplaintDialog(
+        userId: widget.user.id,
+        initialType: null,
+      ),
+    );
+  }
+
+  void _navigateToVisitors() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => VisitorsPage(user: widget.user),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserBloc, UserState>(
-        builder: (context, state) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildWelcomeCard(user),
-                const SizedBox(height: 12),
-                _buildRentCard(),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Visitors',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddVisitorDialog(context),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Add', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                  ],
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAdsCarousel(),
+          const SizedBox(height: 20),
+          const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Text(
+              'Quick Options',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildQuickOptionsGrid(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdsCarousel() {
+    if (_adsLoading) {
+      return Container(
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_ads.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      height: 160,
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: _ads.length,
+        itemBuilder: (context, index) {
+          final ad = _ads[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: CachedNetworkImage(
+                imageUrl: ad.imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
-                const SizedBox(height: 8),
-                _buildVisitorsList(context),
-                const SizedBox(height: 12),
-                _buildQuickActions(context),
-              ],
+                errorWidget: (_, __, ___) => Container(
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, size: 48),
+                ),
+              ),
             ),
           );
         },
-      );
-  }
-
-  Widget _buildWelcomeCard(UserModel user) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.waving_hand,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome back,',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        user.name.split(' ')[0],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.apartment, color: Colors.white, size: 16),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      user.block != null
-                          ? 'Block ${user.block}, Floor ${user.floor}, Room ${user.roomNumber}'
-                          : 'Account Status: ${user.status.name.toUpperCase()}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildRentCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.account_balance_wallet,
-                    color: AppTheme.secondaryColor,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'Rent Details',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _buildRentItem('Monthly Rent', '₹15,000', Icons.home),
-            const SizedBox(height: 10),
-            _buildRentItem('Maintenance', '₹2,000', Icons.build),
-            const Divider(height: 16),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: _buildRentItem('Total Due', '₹17,000', Icons.payments, isTotal: true),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.payment, color: Colors.white, size: 16),
-                label: const Text(
-                  'Pay Now',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildQuickOptionsGrid() {
+    const options = [
+      _QuickOption('Home', Icons.home_rounded, _Action.home),
+      _QuickOption('Complaints', Icons.report_problem_rounded, _Action.complaints),
+      _QuickOption('Payments', Icons.payment_rounded, _Action.comingSoon),
+      _QuickOption('Helpdesk', Icons.help_rounded, _Action.comingSoon),
+      _QuickOption('Amenities', Icons.spa_rounded, _Action.comingSoon),
+      _QuickOption('Security', Icons.security_rounded, _Action.comingSoon),
+      _QuickOption('Raise Alert', Icons.warning_rounded, _Action.raiseAlert),
+      _QuickOption('Invite Guest', Icons.person_add_rounded, _Action.inviteGuest),
+      _QuickOption('Cab/Auto', Icons.local_taxi_rounded, _Action.comingSoon),
+      _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.comingSoon),
+      _QuickOption('Visiting Help', Icons.people_rounded, _Action.comingSoon),
+      _QuickOption('Call Security', Icons.phone_rounded, _Action.comingSoon),
+      _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
+      _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
+      _QuickOption('My Family', Icons.family_restroom_rounded, _Action.comingSoon),
+      _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.comingSoon),
+      _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.comingSoon),
+      _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.comingSoon),
+    ];
 
-  Widget _buildRentItem(String label, String value, IconData icon, {bool isTotal = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isTotal ? AppTheme.primaryColor : AppTheme.textColor.withOpacity(0.6),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: isTotal ? 14 : 13,
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                color: isTotal ? AppTheme.primaryColor : AppTheme.textColor,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 16 : 14,
-            fontWeight: FontWeight.bold,
-            color: isTotal ? AppTheme.primaryColor : AppTheme.secondaryColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVisitorsList(BuildContext context) {
-    return BlocBuilder<UserBloc, UserState>(
-      builder: (context, state) {
-        if (state is UserLoaded) {
-          // Filter visitors by user's block and room if available
-          final visitors = state.visitors.where((v) {
-            if (user.block != null && user.roomNumber != null) {
-              return v.block == user.block && v.homeNumber == user.roomNumber;
-            }
-            return true; // Show all if user doesn't have block/room assigned
-          }).toList();
-          
-          if (visitors.isEmpty) {
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: Text(
-                    'No visitors added yet',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textColor.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: visitors.length,
-            itemBuilder: (context, index) {
-              final visitor = visitors[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VisitorDetailsPage(visitor: visitor),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    dense: true,
-                    leading: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryColor.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.transparent,
-                      child: visitor.image != null
-                          ? ClipOval(
-                              child: Image.network(
-                                visitor.image!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : const Icon(Icons.person, color: Colors.white, size: 18),
-                    ),
-                  ),
-                  title: Text(
-                    visitor.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            visitor.type.name.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.secondaryColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.phone, size: 12, color: AppTheme.textColor.withOpacity(0.6)),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            visitor.mobileNumber,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textColor.withOpacity(0.6),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Icon(Icons.calendar_today, size: 14, color: AppTheme.textColor.withOpacity(0.6)),
-                      const SizedBox(height: 2),
-                      Text(
-                        visitor.visitTime.toString().split(' ')[0],
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.textColor.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-            },
-          );
-        }
-        return const Card(
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator()),
-          ),
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.9,
+      ),
+      itemCount: options.length,
+      itemBuilder: (context, index) {
+        final o = options[index];
+        return _QuickOptionTile(
+          title: o.title,
+          icon: o.icon,
+          onTap: () => _handleQuickOptionTap(o),
         );
       },
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.errorColor,
-            AppTheme.errorColor.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.errorColor.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.flash_on, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showRaiseComplaintDialog(context),
-                icon: const Icon(Icons.report_problem, color: Colors.white, size: 16),
-                label: const Text(
-                  'Raise Complaint',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddVisitorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AddVisitorDialog(userId: user.id),
-    );
-  }
-
-  void _showRaiseComplaintDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => RaiseComplaintDialog(userId: user.id, initialType: null),
-    );
+  void _handleQuickOptionTap(_QuickOption o) {
+    switch (o.action) {
+      case _Action.home:
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+        break;
+      case _Action.complaints:
+        widget.onSwitchToComplaints?.call();
+        break;
+      case _Action.raiseAlert:
+        _showRaiseComplaintDialog();
+        break;
+      case _Action.inviteGuest:
+        _navigateToVisitors();
+        break;
+      case _Action.comingSoon:
+        _navigateToComingSoon(o.title);
+        break;
+    }
   }
 }
 
+enum _Action { home, complaints, raiseAlert, inviteGuest, comingSoon }
+
+class _QuickOption {
+  final String title;
+  final IconData icon;
+  final _Action action;
+  const _QuickOption(this.title, this.icon, this.action);
+}
+
+class _QuickOptionTile extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QuickOptionTile({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      shadowColor: Colors.black26,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppTheme.primaryColor, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1772,6 +1772,157 @@ class ApiService {
     }
   }
 
+  // Get ads
+  Future<Map<String, dynamic>> getAds() async {
+    try {
+      final response = await _dio.get(ApiConfig.getAds);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'ads': response.data['ads'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get ads',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Create ad
+  Future<Map<String, dynamic>> createAd(File image, {int? displayOrder}) async {
+    try {
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          image.path,
+          filename: 'ad_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+        if (displayOrder != null) 'displayOrder': displayOrder.toString(),
+      });
+
+      final response = await _dio.post(
+        ApiConfig.createAd,
+        data: formData,
+      );
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Ad created successfully',
+          'ad': response.data['ad'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to create ad',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Delete ad
+  Future<Map<String, dynamic>> deleteAd(String adId) async {
+    try {
+      final response = await _dio.delete('${ApiConfig.deleteAd}/$adId');
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Ad deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to delete ad',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Get permissions
   Future<Map<String, dynamic>> getPermissions(String userType) async {
     try {

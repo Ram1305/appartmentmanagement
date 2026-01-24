@@ -10,6 +10,7 @@ import '../../features/admin/presentation/pages/block_details_page.dart';
 import '../../features/manager/presentation/pages/manager_dashboard_page.dart';
 import '../../features/user/presentation/pages/user_dashboard_page.dart';
 import '../../features/security/presentation/pages/security_dashboard_page.dart';
+import '../../features/user/presentation/pages/coming_soon_page.dart';
 import '../../core/models/block_model.dart';
 
 class AppRoutes {
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String managerDashboard = '/manager-dashboard';
   static const String userDashboard = '/user-dashboard';
   static const String securityDashboard = '/security-dashboard';
+  static const String featureComingSoon = '/feature-coming-soon';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -46,6 +48,11 @@ class AppRoutes {
       managerDashboard: (context) => const ManagerDashboardPage(),
       userDashboard: (context) => const UserDashboardPage(),
       securityDashboard: (context) => const SecurityDashboardPage(),
+      featureComingSoon: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments;
+        final featureName = args is Map ? args['featureName'] as String? : null;
+        return ComingSoonPage(featureName: featureName);
+      },
     };
   }
 }

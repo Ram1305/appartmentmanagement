@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -13,6 +13,7 @@ import 'tabs/tenants_tab.dart';
 import 'tabs/payments_tab.dart';
 import 'tabs/permissions_tab.dart';
 import 'tabs/notices_tab.dart';
+import 'tabs/ads_tab.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -27,7 +28,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 10, vsync: this);
+    _tabController = TabController(length: 11, vsync: this);
     context.read<AdminBloc>().add(LoadBlocksEvent());
     // Initialize dummy data on first load
     context.read<AdminBloc>().add(InitializeDummyDataEvent());
@@ -79,6 +80,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
             Tab(icon: Icon(Icons.payment), text: 'Payments'),
             Tab(icon: Icon(Icons.security), text: 'Permissions'),
             Tab(icon: Icon(Icons.notifications), text: 'Notices'),
+            Tab(icon: Icon(Icons.campaign), text: 'Ads'),
           ],
         ),
         actions: [
@@ -113,6 +115,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 PaymentsTab(state: state),
                 PermissionsTab(state: state),
                 NoticesTab(state: state),
+                AdsTab(state: state),
               ],
             );
           }

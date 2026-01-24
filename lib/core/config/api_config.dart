@@ -63,6 +63,12 @@ class ApiConfig {
   static const String permissionsBase = '$baseUrl/permissions';
   static const String getPermissions = permissionsBase; // Use with /:userType
   static const String updatePermissions = permissionsBase; // Use with /:userType
+
+  // Ad endpoints
+  static const String adsBase = '$baseUrl/ads';
+  static const String getAds = adsBase;
+  static const String createAd = adsBase;
+  static const String deleteAd = adsBase; // Use with /:id
   
   // Health check
   static const String health = '$baseUrl/health';
