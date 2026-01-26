@@ -5,7 +5,7 @@ import '../../features/auth/presentation/pages/security_registration_page.dart';
 import '../../features/auth/presentation/pages/user_type_selection_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/waiting_approval_page.dart';
-import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../guards/admin_route_guard.dart';
 import '../../features/admin/presentation/pages/block_details_page.dart';
 import '../../features/manager/presentation/pages/manager_dashboard_page.dart';
 import '../../features/user/presentation/pages/user_dashboard_page.dart';
@@ -40,7 +40,7 @@ class AppRoutes {
       securityRegistration: (context) => const SecurityRegistrationPage(),
       forgotPassword: (context) => const ForgotPasswordPage(),
       waitingApproval: (context) => const WaitingApprovalPage(),
-      adminDashboard: (context) => const AdminDashboardPage(),
+      adminDashboard: (context) => const AdminRouteGuard(),
       blockDetails: (context) {
         final block = ModalRoute.of(context)!.settings.arguments as BlockModel;
         return BlockDetailsPage(block: block);

@@ -22,21 +22,6 @@ const getAds = async (req, res) => {
 
 const createAd = async (req, res) => {
   try {
-    // CRITICAL: Check admin authorization FIRST before any processing
-    // This is a double-check in case middleware is bypassed
-    if (!req.adminId) {
-      console.error('Unauthorized ad creation attempt:', {
-        userId: req.userId,
-        hasFile: !!req.file,
-        message: 'Admin ID not found. User is not authorized to create ads.'
-      });
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized. Only admins can create ads.',
-        message: 'Admin access required to create ads.'
-      });
-    }
-
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({
         success: false,
@@ -57,7 +42,7 @@ const createAd = async (req, res) => {
       image: imageUrl,
       displayOrder: isNaN(displayOrder) ? 0 : displayOrder,
       isActive: true,
-      createdBy: req.adminId, // Only admins can reach this point
+      createdBy: req.userId, // Store the user ID who created the ad
     });
 
     res.status(201).json({
