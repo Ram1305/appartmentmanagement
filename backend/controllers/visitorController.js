@@ -106,6 +106,15 @@ const createVisitor = async (req, res) => {
   }
 };
 
+// Normalize mobile to 10 digits (strip non-digits, use last 10) for schema validation
+function normalizeMobile(input) {
+  if (input == null || typeof input !== 'string') return null;
+  const digits = input.replace(/\D/g, '');
+  if (digits.length >= 10) return digits.slice(-10);
+  if (digits.length > 0) return digits;
+  return null;
+}
+
 // @desc    Create visitor (by security staff – block/home from body)
 // @route   POST /api/visitors/security
 // @access  Private (Security)
@@ -113,7 +122,7 @@ const createVisitorBySecurity = async (req, res) => {
   try {
     const {
       name,
-      mobileNumber,
+      mobileNumber: mobileRaw,
       category = 'outsider',
       type,
       block,
@@ -124,10 +133,18 @@ const createVisitorBySecurity = async (req, res) => {
       visitTime: visitTimeBody,
     } = req.body;
 
-    if (!name || !mobileNumber || !block || !homeNumber) {
+    if (!name || !block || !homeNumber) {
       return res.status(400).json({
         success: false,
-        error: 'Name, mobile number, block, and home number are required',
+        error: 'Name, block, and home number are required',
+      });
+    }
+
+    const mobileNumber = normalizeMobile(mobileRaw);
+    if (!mobileNumber || mobileNumber.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid 10-digit mobile number',
       });
     }
 
@@ -153,15 +170,15 @@ const createVisitorBySecurity = async (req, res) => {
     });
 
     const visitor = await Visitor.create({
-      name,
+      name: name.trim(),
       mobileNumber,
       category,
       type: category === 'relative' ? 'guest' : type,
-      reasonForVisit: reasonForVisit || undefined,
-      vehicleNumber: vehicleNumber || undefined,
+      reasonForVisit: reasonForVisit ? String(reasonForVisit).trim() : undefined,
+      vehicleNumber: vehicleNumber ? String(vehicleNumber).trim() : undefined,
       image: image || undefined,
-      block,
-      homeNumber,
+      block: String(block).trim(),
+      homeNumber: String(homeNumber).trim(),
       visitTime,
       otp,
       qrCode: qrData,
@@ -171,18 +188,25 @@ const createVisitorBySecurity = async (req, res) => {
 
     const created = await Visitor.findById(visitor._id)
       .populate('registeredBy', 'name email mobileNumber')
-      .select('-__v');
+      .select('-__v')
+      .lean();
+
+    // Ensure client gets id and ISO visitTime for Flutter parsing
+    const out = { ...created, id: created._id ? created._id.toString() : created._id };
+    if (out.visitTime) out.visitTime = new Date(out.visitTime).toISOString();
 
     res.status(201).json({
       success: true,
       message: 'Visitor created successfully',
-      visitor: created,
+      visitor: out,
     });
   } catch (error) {
     console.error('Create visitor by security error:', error);
-    res.status(500).json({
+    const isValidation = error.name === 'ValidationError';
+    const message = error.message || 'Server error';
+    res.status(isValidation ? 400 : 500).json({
       success: false,
-      error: error.message || 'Server error',
+      error: message,
     });
   }
 };

@@ -52,6 +52,8 @@ class ApproveVisitorEvent extends SecurityEvent {
   List<Object?> get props => [visitorId];
 }
 
+class ClearSecurityErrorEvent extends SecurityEvent {}
+
 // States
 abstract class SecurityState extends Equatable {
   const SecurityState();
@@ -67,14 +69,17 @@ class SecurityLoading extends SecurityState {}
 class SecurityLoaded extends SecurityState {
   final List<VisitorModel> visitors;
   final List<BlockModel> blocks;
+  /// Non-null when the last add-visitor API call failed (visitor may still be shown locally).
+  final String? lastAddVisitorError;
 
   const SecurityLoaded({
     required this.visitors,
     required this.blocks,
+    this.lastAddVisitorError,
   });
 
   @override
-  List<Object?> get props => [visitors, blocks];
+  List<Object?> get props => [visitors, blocks, lastAddVisitorError];
 }
 
 // BLoC
@@ -88,6 +93,14 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
     on<LoadSecurityDataEvent>(_onLoadSecurityData);
     on<AddVisitorEvent>(_onAddVisitor);
     on<ApproveVisitorEvent>(_onApproveVisitor);
+    on<ClearSecurityErrorEvent>(_onClearSecurityError);
+  }
+
+  void _onClearSecurityError(ClearSecurityErrorEvent event, Emitter<SecurityState> emit) {
+    final current = state;
+    if (current is SecurityLoaded && current.lastAddVisitorError != null) {
+      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks));
+    }
   }
 
   Future<void> _onLoadSecurityData(
@@ -125,7 +138,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
 
       emit(SecurityLoaded(visitors: visitors, blocks: blocks));
     } catch (e) {
-      // On error: try local cache for both
+      // On error: try local cache for both (no lastAddVisitorError on load)
       try {
         final visitors = await _getVisitors();
         final blocks = await _getBlocks();
@@ -151,9 +164,11 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       }
 
       // Persist to backend so visitor still appears after close/reopen
+      final mobileDigits = event.mobileNumber.replaceAll(RegExp(r'\D'), '');
+      final mobile10 = mobileDigits.length >= 10 ? mobileDigits.substring(mobileDigits.length - 10) : event.mobileNumber.trim();
       final payload = <String, dynamic>{
         'name': event.name,
-        'mobileNumber': event.mobileNumber,
+        'mobileNumber': mobile10,
         'category': 'outsider',
         'type': event.type.name,
         'block': event.block,
@@ -165,6 +180,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       };
       final response = await _apiService.createSecurityVisitor(payload);
 
+      String? apiError;
       VisitorModel newVisitor;
       if (response['success'] == true && response['visitor'] != null) {
         final raw = response['visitor'];
@@ -175,6 +191,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         newVisitor = VisitorModel.fromJson(map);
       } else {
         // Offline/API failure: add locally so user sees it; will not persist across reopen until API is available
+        apiError = response['error'] as String? ?? 'Could not save visitor to server. You may be offline.';
         final otp = _generateOTP();
         final visitorId = const Uuid().v4();
         final qrData = jsonEncode({
@@ -207,9 +224,42 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final blocks = await _getBlocks();
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks));
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, lastAddVisitorError: apiError));
     } catch (e) {
-      // Handle error
+      // Exception during API or parsing: add visitor locally and surface error
+      final current = state;
+      List<VisitorModel> visitors = current is SecurityLoaded ? List<VisitorModel>.from(current.visitors) : await _getVisitors();
+      final blocks = current is SecurityLoaded ? current.blocks : await _getBlocks();
+      final otp = _generateOTP();
+      final visitorId = const Uuid().v4();
+      final qrData = jsonEncode({
+        'visitorId': visitorId,
+        'name': event.name,
+        'mobileNumber': event.mobileNumber,
+        'block': event.block,
+        'homeNumber': event.homeNumber,
+        'visitTime': DateTime.now().toIso8601String(),
+        'otp': otp,
+      });
+      final newVisitor = VisitorModel(
+        id: visitorId,
+        name: event.name,
+        mobileNumber: event.mobileNumber,
+        category: VisitorCategory.outsider,
+        type: event.type,
+        block: event.block,
+        homeNumber: event.homeNumber,
+        visitTime: DateTime.now(),
+        otp: otp,
+        qrCode: qrData,
+        image: event.image,
+        reasonForVisit: event.purposeOfVisit,
+        vehicleNumber: event.vehicleNumber,
+        approvalStatus: VisitorApprovalStatus.pending,
+      );
+      visitors.add(newVisitor);
+      await _saveVisitors(visitors);
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, lastAddVisitorError: 'Could not save to server: ${e.toString()}'));
     }
   }
 
@@ -225,7 +275,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       if (idx < 0) return;
       visitors[idx] = visitors[idx].copyWith(approvalStatus: VisitorApprovalStatus.approved);
       await _saveVisitors(visitors);
-      emit(SecurityLoaded(visitors: visitors, blocks: current.blocks));
+      emit(SecurityLoaded(visitors: visitors, blocks: current.blocks, lastAddVisitorError: current.lastAddVisitorError));
     } catch (e) {
       // Handle error
     }

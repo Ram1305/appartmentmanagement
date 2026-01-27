@@ -38,8 +38,6 @@ flutter:
   uses-material-design: true
   
   assets:
-#    - assets/images/
-#    - assets/icons/
     - assets/appicon.png
     - assets/splashicon.png
     - assets/waiting.svg

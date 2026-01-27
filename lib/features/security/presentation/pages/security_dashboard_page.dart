@@ -64,7 +64,19 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
           ),
         ],
       ),
-      body: BlocBuilder<SecurityBloc, SecurityState>(
+      body: BlocConsumer<SecurityBloc, SecurityState>(
+        listener: (context, state) {
+          if (state is SecurityLoaded && state.lastAddVisitorError != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.lastAddVisitorError!),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            context.read<SecurityBloc>().add(ClearSecurityErrorEvent());
+          }
+        },
         builder: (context, state) {
           if (state is SecurityLoaded) {
             final filtered = _filteredVisitors(state);
