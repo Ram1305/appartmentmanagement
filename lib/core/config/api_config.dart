@@ -4,14 +4,24 @@ class ApiConfig {
   /// Production server URL (used in release builds).
   static const String _productionBaseUrl = 'http://72.61.236.154:5000/api';
 
-  /// Local/debug server URL (used in debug builds). Change as needed:
-  /// - Android emulator: 'http://10.0.2.2:5000/api'
-  /// - iOS simulator: 'http://localhost:5000/api'
-  /// - Physical device: 'http://YOUR_PC_IP:5000/api' (e.g. http://192.168.1.100:5000/api)
+  /// Local/debug server URL (used in debug builds).
+  /// - Android emulator: use 10.0.2.2
+  /// - Physical device: use your PC's IP (e.g. 192.168.1.100) so phone and PC are on same Wi-Fi
   static const String _debugBaseUrl = 'http://10.0.2.2:5000/api';
 
-  /// Base URL: uses debug URL when running in debug mode, otherwise production.
-  static String get baseUrl => kDebugMode ? _debugBaseUrl : _productionBaseUrl;
+  /// Override at runtime: run with
+  ///   flutter run --dart-define=API_BASE_URL=http://YOUR_PC_IP:5000/api
+  /// when using a physical device (replace YOUR_PC_IP with your computer's IP, e.g. 192.168.29.61).
+  static const String _overrideBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
+
+  /// Base URL: override if set, else debug URL in debug mode, else production.
+  static String get baseUrl {
+    if (_overrideBaseUrl.isNotEmpty) return _overrideBaseUrl;
+    return kDebugMode ? _debugBaseUrl : _productionBaseUrl;
+  }
 
   static String get authBase => '$baseUrl/auth';
 

@@ -39,16 +39,18 @@ class ApiService {
             clearToken();
           }
 
-          // Handle connection timeout errors - modify error message
+          // Handle connection timeout / unreachable server - show URL and hint for physical device
           String? customMessage;
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
               error.type == DioExceptionType.sendTimeout) {
             customMessage =
-                'Connection timeout. Please check your internet connection and ensure the server is running.';
+                'Connection timeout. Ensure the server is running at ${ApiConfig.baseUrl}. '
+                'On a physical device, use your PC IP: run with --dart-define=API_BASE_URL=http://YOUR_IP:5000/api';
           } else if (error.type == DioExceptionType.connectionError) {
             customMessage =
-                'Unable to connect to server. Please check your internet connection and verify the server is running at ${ApiConfig.baseUrl}';
+                'Cannot reach server at ${ApiConfig.baseUrl}. '
+                'Check: (1) Backend is running (npm start), (2) Phone and PC on same Wi-Fi, (3) On physical device use your PC IP in API_BASE_URL.';
           }
 
           if (customMessage != null) {

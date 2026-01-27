@@ -191,12 +191,20 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password, userType } = req.body;
-    
-    // Accept either email or username as identifier
-    const identifier = email ? email.toString().toLowerCase().trim() : null;
+
+    // Accept either email or username as identifier (support both field names)
+    const emailOrUsername = email ?? req.body.username;
+    const identifier = emailOrUsername != null && String(emailOrUsername).trim() !== ''
+      ? String(emailOrUsername).toLowerCase().trim()
+      : null;
     if (!identifier) {
-      console.log('ERROR: No email or username provided');
       return res.status(400).json({ error: 'Email or username is required' });
+    }
+
+    // Password is required; missing or empty password would cause comparePassword to throw
+    const passwordStr = password != null ? String(password) : '';
+    if (!passwordStr || passwordStr.trim() === '') {
+      return res.status(400).json({ error: 'Password is required' });
     }
 
     // Check all collections for the user and determine which model they belong to
@@ -226,8 +234,15 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Verify password
-    const isPasswordMatch = await user.comparePassword(password);
+    // Enforce account lockout for User model (has isLocked virtual; other models have no such field)
+    if (user.isLocked) {
+      return res.status(423).json({
+        error: 'Account temporarily locked due to too many failed attempts. Try again later.',
+      });
+    }
+
+    // Verify password (use passwordStr to avoid undefined)
+    const isPasswordMatch = await user.comparePassword(passwordStr);
 
     if (!isPasswordMatch) {
       return res.status(401).json({

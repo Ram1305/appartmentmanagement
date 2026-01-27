@@ -234,10 +234,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final user = await authRepository
           .login(event.email, event.password, event.userType)
           .timeout(
-        const Duration(seconds: 30),
+        const Duration(seconds: 60),
         onTimeout: () {
           throw TimeoutException(
-            'Connection timeout. Please check your internet and try again.',
+            'Connection timeout. Check that the server is running and you are using the correct address. '
+            'On a physical device, run the app with your PC IP: flutter run --dart-define=API_BASE_URL=http://YOUR_IP:5000/api',
           );
         },
       );
@@ -256,7 +257,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     } on TimeoutException catch (e) {
       debugPrint('=== AUTH BLOC TIMEOUT ===');
-      emit(AuthError(message: e.message ?? 'Connection timeout. Please try again.'));
+      emit(AuthError(
+        message: e.message ??
+            'Connection timeout. Ensure the server is running and the app is pointing to the right URL.',
+      ));
     } catch (e) {
       debugPrint('=== AUTH BLOC ERROR ===');
       debugPrint('Error: $e');
