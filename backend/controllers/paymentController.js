@@ -376,6 +376,104 @@ const completePayment = async (req, res) => {
   }
 };
 
+// @desc    Update a payment (edit line items, month, year, or status)
+// @route   PATCH /api/payments/:id
+const updatePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { month, year, lineItems, status, paymentMethod, transactionId, notes } = req.body;
+
+    const payment = await Payment.findById(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found',
+      });
+    }
+
+    if (month !== undefined) payment.month = String(month);
+    if (year !== undefined) payment.year = Number(year);
+    if (notes !== undefined) payment.notes = notes;
+
+    if (Array.isArray(lineItems) && lineItems.length > 0) {
+      const validTypes = [
+        'Maintenance', 'Rent', 'Parking', 'Amenities usage',
+        'Penalty', 'Electricity', 'Water',
+      ];
+      const items = lineItems.map((item) => {
+        const type = item.type && validTypes.includes(item.type) ? item.type : validTypes[0];
+        const amount = Number(item.amount);
+        return { type, amount: isNaN(amount) ? 0 : Math.max(0, amount) };
+      });
+      const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+      payment.lineItems = items;
+      payment.totalAmount = totalAmount;
+      payment.amount = totalAmount;
+    }
+
+    if (status !== undefined) {
+      if (!['pending', 'paid', 'overdue'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid status. Use pending, paid, or overdue.',
+        });
+      }
+      payment.status = status;
+      if (status === 'paid') {
+        payment.paymentDate = payment.paymentDate || new Date();
+        if (paymentMethod) payment.paymentMethod = paymentMethod;
+        if (transactionId !== undefined) payment.transactionId = transactionId;
+      }
+    } else if (paymentMethod !== undefined) payment.paymentMethod = paymentMethod;
+    if (transactionId !== undefined) payment.transactionId = transactionId;
+
+    await payment.save();
+
+    const populated = await Payment.findById(payment._id).populate(
+      'userId',
+      'name email mobileNumber block floor roomNumber'
+    );
+
+    res.json({
+      success: true,
+      message: 'Payment updated successfully',
+      payment: populated,
+    });
+  } catch (error) {
+    console.error('Update payment error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
+// @desc    Delete a payment
+// @route   DELETE /api/payments/:id
+const deletePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const payment = await Payment.findById(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found',
+      });
+    }
+    await Payment.findByIdAndDelete(id);
+    res.json({
+      success: true,
+      message: 'Payment deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete payment error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 // @desc    Record payment (legacy – manual record)
 // @route   POST /api/payments/record
 const recordPayment = async (req, res) => {
@@ -430,6 +528,8 @@ module.exports = {
   getPaymentById,
   getPaymentStats,
   assignPayment,
+  updatePayment,
+  deletePayment,
   createRazorpayOrder,
   completePayment,
   recordPayment,

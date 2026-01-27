@@ -9,6 +9,11 @@ const List<String> _monthNames = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const List<String> _paymentTypes = [
+  'Maintenance', 'Rent', 'Parking', 'Amenities usage',
+  'Penalty', 'Electricity', 'Water',
+];
+
 class PaymentsTab extends StatefulWidget {
   final AdminLoaded state;
   /// When non-null, [parentTabController] and [parentTabIndex] are used to
@@ -220,6 +225,295 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
     );
   }
 
+  Future<void> _showMarkPaidDialog(PaymentModel p) async {
+    String paymentMethod = 'cash';
+    final transactionController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Mark as paid'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '${p.month} ${p.year} · ₹${p.displayAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: paymentMethod,
+                  decoration: const InputDecoration(
+                    labelText: 'Payment method',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                    DropdownMenuItem(value: 'online', child: Text('Online')),
+                    DropdownMenuItem(value: 'cheque', child: Text('Cheque')),
+                    DropdownMenuItem(value: 'other', child: Text('Other')),
+                  ],
+                  onChanged: (v) => setDialogState(() => paymentMethod = v ?? paymentMethod),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: transactionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Transaction / reference (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              child: const Text('Mark as paid'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final transactionId = transactionController.text.trim();
+    transactionController.dispose();
+    if (result != true || !mounted) return;
+    final res = await _api.updatePayment(
+      p.id,
+      status: 'paid',
+      paymentMethod: paymentMethod,
+      transactionId: transactionId.isEmpty ? null : transactionId,
+    );
+    if (!mounted) return;
+    if (res['success'] == true) {
+      _loadPayments();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment marked as paid'), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['error']?.toString() ?? 'Failed to update'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete(PaymentModel p) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete payment?'),
+        content: Text(
+          'Remove ${p.month} ${p.year} · ₹${p.displayAmount.toStringAsFixed(2)} for ${p.userName ?? "this user"}? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    final res = await _api.deletePayment(p.id);
+    if (!mounted) return;
+    if (res['success'] == true) {
+      _loadPayments();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment deleted'), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['error']?.toString() ?? 'Failed to delete'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showEditPaymentSheet(PaymentModel p) {
+    int selectedMonth = _monthNames.indexOf(p.month) + 1;
+    if (selectedMonth < 1) selectedMonth = DateTime.now().month;
+    int selectedYear = p.year;
+    String selectedStatus = p.status;
+    final controllers = <String, TextEditingController>{};
+    for (final t in _paymentTypes) {
+      PaymentLineItem? item;
+      for (final e in p.lineItems) {
+        if (e.type == t) { item = e; break; }
+      }
+      final amt = item?.amount ?? 0.0;
+      controllers[t] = TextEditingController(text: amt > 0 ? amt.toStringAsFixed(0) : '');
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          double total = 0;
+          for (final t in _paymentTypes) {
+            total += double.tryParse(controllers[t]?.text ?? '') ?? 0;
+          }
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Text('Edit payment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: selectedMonth,
+                          decoration: const InputDecoration(labelText: 'Month', border: OutlineInputBorder()),
+                          items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_monthNames[i]))),
+                          onChanged: (v) => setModalState(() => selectedMonth = v ?? selectedMonth),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: selectedYear,
+                          decoration: const InputDecoration(labelText: 'Year', border: OutlineInputBorder()),
+                          items: [DateTime.now().year - 1, DateTime.now().year, DateTime.now().year + 1]
+                              .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
+                              .toList(),
+                          onChanged: (v) => setModalState(() => selectedYear = v ?? selectedYear),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                      DropdownMenuItem(value: 'paid', child: Text('Paid')),
+                      DropdownMenuItem(value: 'overdue', child: Text('Overdue')),
+                    ],
+                    onChanged: (v) => setModalState(() => selectedStatus = v ?? selectedStatus),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Line items', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  ..._paymentTypes.map((type) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            SizedBox(width: 130, child: Text(type, style: const TextStyle(fontSize: 13))),
+                            Expanded(
+                              child: TextField(
+                                controller: controllers[type],
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: '0',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                onChanged: (_) => setModalState(() {}),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  Text(
+                    'Total: ₹${total.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final lineItems = <Map<String, dynamic>>[];
+                            for (final type in _paymentTypes) {
+                              final amt = double.tryParse(controllers[type]?.text ?? '') ?? 0;
+                              if (amt > 0) lineItems.add({'type': type, 'amount': amt});
+                            }
+                            if (lineItems.isEmpty) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(content: Text('Add at least one amount'), backgroundColor: Colors.red),
+                              );
+                              return;
+                            }
+                            final res = await _api.updatePayment(
+                              p.id,
+                              month: _monthNames[selectedMonth - 1],
+                              year: selectedYear,
+                              status: selectedStatus,
+                              lineItems: lineItems,
+                            );
+                            if (!ctx.mounted) return;
+                            Navigator.pop(ctx);
+                            if (res['success'] == true) {
+                              _loadPayments();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Payment updated'), backgroundColor: Colors.green),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(res['error']?.toString() ?? 'Failed to update'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    ).whenComplete(() {
+      for (final c in controllers.values) {
+        c.dispose();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -329,6 +623,7 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
                             p.userFloor,
                             p.userRoomNumber,
                           ].where((e) => e != null && e.isNotEmpty).join(' – ');
+                          final isPending = _tabController.index == 0;
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
@@ -351,10 +646,21 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              trailing: Icon(
-                                Icons.chevron_right,
-                                color: Colors.grey[400],
-                              ),
+                              trailing: isPending
+                                  ? PopupMenuButton<String>(
+                                      icon: const Icon(Icons.more_vert),
+                                      onSelected: (value) {
+                                        if (value == 'edit') _showEditPaymentSheet(p);
+                                        else if (value == 'paid') _showMarkPaidDialog(p);
+                                        else if (value == 'delete') _confirmDelete(p);
+                                      },
+                                      itemBuilder: (ctx) => [
+                                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                        const PopupMenuItem(value: 'paid', child: Text('Mark as paid')),
+                                        const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                                      ],
+                                    )
+                                  : const Icon(Icons.chevron_right, color: Colors.grey),
                             ),
                           );
                         },

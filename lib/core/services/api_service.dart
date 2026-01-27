@@ -1823,6 +1823,70 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> updatePayment(
+    String paymentId, {
+    String? month,
+    int? year,
+    List<Map<String, dynamic>>? lineItems,
+    String? status,
+    String? paymentMethod,
+    String? transactionId,
+    String? notes,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (month != null) data['month'] = month;
+      if (year != null) data['year'] = year;
+      if (lineItems != null) data['lineItems'] = lineItems;
+      if (status != null) data['status'] = status;
+      if (paymentMethod != null) data['paymentMethod'] = paymentMethod;
+      if (transactionId != null) data['transactionId'] = transactionId;
+      if (notes != null) data['notes'] = notes;
+
+      final response = await _dio.patch(
+        ApiConfig.getPaymentByIdUrl(paymentId),
+        data: data,
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Payment updated',
+          'payment': response.data['payment'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to update payment',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deletePayment(String paymentId) async {
+    try {
+      final response = await _dio.delete(ApiConfig.getPaymentByIdUrl(paymentId));
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Payment deleted',
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to delete payment',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> createRazorpayOrder(String paymentId) async {
     try {
       final response = await _dio.post(

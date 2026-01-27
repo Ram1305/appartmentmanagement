@@ -6,6 +6,8 @@ const {
   getPaymentById,
   getPaymentStats,
   assignPayment,
+  updatePayment,
+  deletePayment,
   createRazorpayOrder,
   completePayment,
   recordPayment,
@@ -21,10 +23,10 @@ router.get('/', protect, getAllPayments);
 router.post('/', protect, assignPayment);
 router.post('/record', protect, recordPayment);
 
-// Get one payment (owner or admin)
-router.get('/:id', protect, getPaymentById);
-
-// Complete payment after Razorpay (user)
+// /:id/complete must be before /:id
 router.patch('/:id/complete', protect, completePayment);
+router.get('/:id', protect, getPaymentById);
+router.patch('/:id', protect, updatePayment);
+router.delete('/:id', protect, deletePayment);
 
 module.exports = router;
