@@ -73,6 +73,7 @@ app.use('/api/visitors', require('./routes/visitorRoutes'));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
 app.use('/api/family-members', require('./routes/familyMemberRoutes'));
 app.use('/api/ads', require('./routes/adRoutes'));
+app.use('/api/amenities', require('./routes/amenityRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

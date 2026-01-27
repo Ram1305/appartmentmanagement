@@ -11,6 +11,7 @@ const {
   resetPassword,
   getCurrentUser,
   getAllUsers,
+  getSecurityList,
   toggleUserActive,
   updateUserStatus,
   updateManager,
@@ -118,6 +119,11 @@ router.put(
 // @desc    Delete manager
 // @access  Public (should be protected in production)
 router.delete('/managers/:id', deleteManager);
+
+// @route   GET /api/auth/security/list
+// @desc    Get security staff list for residents
+// @access  Private
+router.get('/security/list', protect, getSecurityList);
 
 // @route   PUT /api/auth/security/:id
 // @desc    Update security staff

@@ -11,6 +11,7 @@ import 'widgets/complaints_tab.dart';
 import 'widgets/profile_tab.dart';
 import 'visitors_page.dart';
 import 'vehicles_page.dart';
+import 'gate_approval_page.dart';
 import 'terms_and_conditions_page.dart';
 
 class UserDashboardPage extends StatefulWidget {
@@ -281,6 +282,21 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Column(
                 children: [
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.how_to_reg_rounded,
+                    title: 'Gate Approval',
+                    isSecondary: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const GateApprovalPage(),
+                        ),
+                      );
+                    },
+                  ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.people_rounded,

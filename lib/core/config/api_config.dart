@@ -88,6 +88,13 @@ class ApiConfig {
   static String get createAd => adsBase;
   static String get deleteAd => adsBase; // Use with /:id
 
+  // Amenity endpoints
+  static String get amenitiesBase => '$baseUrl/amenities';
+  static String get getAmenities => amenitiesBase;
+  static String get createAmenity => amenitiesBase;
+  static String updateAmenityUrl(String id) => '$amenitiesBase/$id';
+  static String deleteAmenityUrl(String id) => '$amenitiesBase/$id';
+
   // Vehicle endpoints
   static String get vehiclesBase => '$baseUrl/vehicles';
   static String get getVehicles => vehiclesBase;
@@ -102,6 +109,11 @@ class ApiConfig {
   static String get visitorsBase => '$baseUrl/visitors';
   static String get getSecurityVisitors => '$visitorsBase/all/list';
   static String get createSecurityVisitor => '$visitorsBase/security';
+  static String get getVisitorsForMyUnit => '$visitorsBase/my-unit';
+  static String visitorApprovalUrl(String visitorId) => '$visitorsBase/$visitorId/approval';
+
+  // Security list for residents
+  static String get getSecurityList => '$securityBase/list';
 
   // Health check
   static String get health => '$baseUrl/health';

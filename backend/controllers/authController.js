@@ -1167,6 +1167,35 @@ const deleteSecurity = async (req, res) => {
   }
 };
 
+// @desc    Get security staff list for residents (name, mobile, profilePic)
+// @route   GET /api/auth/security/list
+// @access  Private
+const getSecurityList = async (req, res) => {
+  try {
+    const securityStaff = await Security.find()
+      .select('name mobileNumber profilePic')
+      .sort({ name: 1 })
+      .lean();
+    const list = securityStaff.map((s) => ({
+      id: s._id.toString(),
+      name: s.name,
+      mobileNumber: s.mobileNumber,
+      profilePic: s.profilePic,
+    }));
+    res.json({
+      success: true,
+      count: list.length,
+      security: list,
+    });
+  } catch (error) {
+    console.error('Get security list error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   registerAdmin,
@@ -1177,6 +1206,7 @@ module.exports = {
   resetPassword,
   getCurrentUser,
   getAllUsers,
+  getSecurityList,
   toggleUserActive,
   updateUserStatus,
   updateManager,

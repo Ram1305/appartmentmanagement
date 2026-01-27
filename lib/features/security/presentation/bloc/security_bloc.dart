@@ -270,14 +270,21 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
     final current = state;
     if (current is! SecurityLoaded) return;
     try {
-      final visitors = List<VisitorModel>.from(current.visitors);
-      final idx = visitors.indexWhere((v) => v.id == event.visitorId);
-      if (idx < 0) return;
-      visitors[idx] = visitors[idx].copyWith(approvalStatus: VisitorApprovalStatus.approved);
-      await _saveVisitors(visitors);
-      emit(SecurityLoaded(visitors: visitors, blocks: current.blocks, lastAddVisitorError: current.lastAddVisitorError));
+      final response = await _apiService.updateVisitorApproval(event.visitorId, 'approved');
+      if (response['success'] == true) {
+        final visitors = List<VisitorModel>.from(current.visitors);
+        final idx = visitors.indexWhere((v) => v.id == event.visitorId);
+        if (idx >= 0) {
+          visitors[idx] = visitors[idx].copyWith(approvalStatus: VisitorApprovalStatus.approved);
+          await _saveVisitors(visitors);
+          emit(SecurityLoaded(visitors: visitors, blocks: current.blocks, lastAddVisitorError: current.lastAddVisitorError));
+        }
+      } else {
+        final err = response['error'] as String? ?? 'Could not approve visitor';
+        emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, lastAddVisitorError: err));
+      }
     } catch (e) {
-      // Handle error
+      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, lastAddVisitorError: 'Failed to approve: ${e.toString()}'));
     }
   }
 

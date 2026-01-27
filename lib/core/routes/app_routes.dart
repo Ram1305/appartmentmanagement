@@ -11,6 +11,7 @@ import '../../features/manager/presentation/pages/manager_dashboard_page.dart';
 import '../../features/user/presentation/pages/user_dashboard_page.dart';
 import '../../features/security/presentation/pages/security_dashboard_page.dart';
 import '../../features/user/presentation/pages/coming_soon_page.dart';
+import '../../features/user/presentation/pages/amenities_page.dart';
 import '../../core/models/block_model.dart';
 
 class AppRoutes {
@@ -27,6 +28,7 @@ class AppRoutes {
   static const String userDashboard = '/user-dashboard';
   static const String securityDashboard = '/security-dashboard';
   static const String featureComingSoon = '/feature-coming-soon';
+  static const String amenities = '/amenities';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -53,6 +55,7 @@ class AppRoutes {
         final featureName = args is Map ? args['featureName'] as String? : null;
         return ComingSoonPage(featureName: featureName);
       },
+      amenities: (context) => const AmenitiesPage(),
     };
   }
 }

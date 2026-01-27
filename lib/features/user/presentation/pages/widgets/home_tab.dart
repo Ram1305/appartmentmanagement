@@ -10,6 +10,8 @@ import 'raise_complaint_dialog.dart';
 import '../visitors_page.dart';
 import '../vehicles_page.dart';
 import '../family_page.dart';
+import '../gate_approval_page.dart';
+import '../security_list_page.dart';
 
 class HomeTab extends StatefulWidget {
   final UserModel user;
@@ -134,6 +136,24 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  void _navigateToGateApproval() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => const GateApprovalPage(),
+      ),
+    );
+  }
+
+  void _navigateToSecurityList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => const SecurityListPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -212,14 +232,15 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Complaints', Icons.report_problem_rounded, _Action.complaints),
       _QuickOption('Payments', Icons.payment_rounded, _Action.comingSoon),
       _QuickOption('Helpdesk', Icons.help_rounded, _Action.comingSoon),
-      _QuickOption('Amenities', Icons.spa_rounded, _Action.comingSoon),
-      _QuickOption('Security', Icons.security_rounded, _Action.comingSoon),
+      _QuickOption('Amenities', Icons.spa_rounded, _Action.amenities),
+      _QuickOption('Security', Icons.security_rounded, _Action.securityList),
       _QuickOption('Raise Alert', Icons.warning_rounded, _Action.raiseAlert),
+      _QuickOption('Gate Approval', Icons.how_to_reg_rounded, _Action.gateApproval),
       _QuickOption('Invite Guest', Icons.person_add_rounded, _Action.inviteGuest),
       _QuickOption('Cab/Auto', Icons.local_taxi_rounded, _Action.comingSoon),
       _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.comingSoon),
       _QuickOption('Visiting Help', Icons.people_rounded, _Action.comingSoon),
-      _QuickOption('Call Security', Icons.phone_rounded, _Action.comingSoon),
+      _QuickOption('Call Security', Icons.phone_rounded, _Action.securityList),
       _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
       _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
       _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
@@ -275,6 +296,9 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.raiseAlert:
         _showRaiseComplaintDialog();
         break;
+      case _Action.gateApproval:
+        _navigateToGateApproval();
+        break;
       case _Action.inviteGuest:
         _navigateToVisitors();
         break;
@@ -284,6 +308,12 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.family:
         _navigateToFamily();
         break;
+      case _Action.securityList:
+        _navigateToSecurityList();
+        break;
+      case _Action.amenities:
+        Navigator.pushNamed(context, AppRoutes.amenities);
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -291,7 +321,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, inviteGuest, vehicles, family, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, comingSoon }
 
 class _QuickOption {
   final String title;

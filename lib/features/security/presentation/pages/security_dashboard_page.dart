@@ -53,6 +53,11 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset('assets/appicon.png', fit: BoxFit.contain),
+        ),
+        leadingWidth: 56,
         title: const Text('Security Dashboard'),
         actions: [
           IconButton(

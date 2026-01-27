@@ -7,6 +7,7 @@ import 'dart:math';
 import '../../../../core/models/user_model.dart';
 import '../../../../core/models/complaint_model.dart';
 import '../../../../core/models/visitor_model.dart';
+import '../../../../core/services/api_service.dart';
 import 'package:uuid/uuid.dart';
 
 // Events
@@ -77,6 +78,18 @@ class RaiseComplaintEvent extends UserEvent {
   List<Object?> get props => [userId, type, description, block, floor, roomNumber];
 }
 
+class LoadMyUnitVisitorsEvent extends UserEvent {}
+
+class UpdateVisitorApprovalEvent extends UserEvent {
+  final String visitorId;
+  final String status; // 'approved' | 'rejected'
+
+  const UpdateVisitorApprovalEvent({required this.visitorId, required this.status});
+
+  @override
+  List<Object?> get props => [visitorId, status];
+}
+
 // States
 abstract class UserState extends Equatable {
   const UserState();
@@ -92,25 +105,30 @@ class UserLoading extends UserState {}
 class UserLoaded extends UserState {
   final List<VisitorModel> visitors;
   final List<ComplaintModel> complaints;
+  final List<VisitorModel> myUnitVisitors;
 
   const UserLoaded({
     required this.visitors,
     required this.complaints,
+    this.myUnitVisitors = const [],
   });
 
   @override
-  List<Object?> get props => [visitors, complaints];
+  List<Object?> get props => [visitors, complaints, myUnitVisitors];
 }
 
 // BLoC
 class UserBloc extends Bloc<UserEvent, UserState> {
   static const String _visitorsKey = 'visitors_list';
   static const String _complaintsKey = 'complaints_list';
+  final ApiService _apiService = ApiService();
 
   UserBloc() : super(UserInitial()) {
     on<LoadUserDataEvent>(_onLoadUserData);
     on<AddVisitorEvent>(_onAddVisitor);
     on<RaiseComplaintEvent>(_onRaiseComplaint);
+    on<LoadMyUnitVisitorsEvent>(_onLoadMyUnitVisitors);
+    on<UpdateVisitorApprovalEvent>(_onUpdateVisitorApproval);
   }
 
   Future<void> _onLoadUserData(
@@ -124,6 +142,69 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       emit(UserLoaded(visitors: visitors, complaints: complaints));
     } catch (e) {
       emit(UserLoaded(visitors: [], complaints: []));
+    }
+  }
+
+  Future<void> _onLoadMyUnitVisitors(
+    LoadMyUnitVisitorsEvent event,
+    Emitter<UserState> emit,
+  ) async {
+    final current = state;
+    if (current is! UserLoaded) return;
+    try {
+      final response = await _apiService.getVisitorsForMyUnit();
+      if (response['success'] == true && response['visitors'] != null) {
+        final list = (response['visitors'] as List)
+            .map((v) => VisitorModel.fromJson(Map<String, dynamic>.from(v as Map)))
+            .toList();
+        emit(UserLoaded(
+          visitors: current.visitors,
+          complaints: current.complaints,
+          myUnitVisitors: list,
+        ));
+      } else {
+        emit(UserLoaded(
+          visitors: current.visitors,
+          complaints: current.complaints,
+          myUnitVisitors: current.myUnitVisitors,
+        ));
+      }
+    } catch (e) {
+      emit(UserLoaded(
+        visitors: current.visitors,
+        complaints: current.complaints,
+        myUnitVisitors: current.myUnitVisitors,
+      ));
+    }
+  }
+
+  Future<void> _onUpdateVisitorApproval(
+    UpdateVisitorApprovalEvent event,
+    Emitter<UserState> emit,
+  ) async {
+    final current = state;
+    if (current is! UserLoaded) return;
+    try {
+      final response = await _apiService.updateVisitorApproval(event.visitorId, event.status);
+      if (response['success'] == true) {
+        final updated = response['visitor'] != null
+            ? VisitorModel.fromJson(Map<String, dynamic>.from(response['visitor'] as Map))
+            : null;
+        List<VisitorModel> newList = List.from(current.myUnitVisitors);
+        final idx = newList.indexWhere((v) => v.id == event.visitorId);
+        if (idx >= 0 && updated != null) {
+          newList[idx] = updated;
+        } else if (idx >= 0 && event.status == 'rejected') {
+          newList.removeAt(idx);
+        }
+        emit(UserLoaded(
+          visitors: current.visitors,
+          complaints: current.complaints,
+          myUnitVisitors: newList,
+        ));
+      }
+    } catch (e) {
+      // Keep state unchanged on error
     }
   }
 

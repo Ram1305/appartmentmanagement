@@ -1,5 +1,7 @@
 const Visitor = require('../models/Visitor');
 const User = require('../models/User');
+const Security = require('../models/Security');
+const Admin = require('../models/Admin');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
@@ -283,6 +285,105 @@ const getVisitorById = async (req, res) => {
   }
 };
 
+// @desc    Get visitors for resident's unit (block + room) for Gate approval
+// @route   GET /api/visitors/my-unit
+// @access  Private (User/Resident)
+const getVisitorsForMyUnit = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user || !user.block || !user.roomNumber) {
+      return res.json({
+        success: true,
+        visitors: [],
+      });
+    }
+    const visitors = await Visitor.find({
+      block: user.block,
+      homeNumber: user.roomNumber,
+    })
+      .populate('registeredBy', 'name email mobileNumber')
+      .sort({ visitTime: -1 })
+      .select('-__v')
+      .lean();
+
+    const out = visitors.map((v) => ({
+      ...v,
+      id: v._id ? v._id.toString() : v._id,
+      visitTime: v.visitTime ? new Date(v.visitTime).toISOString() : v.visitTime,
+    }));
+
+    res.json({
+      success: true,
+      count: out.length,
+      visitors: out,
+    });
+  } catch (error) {
+    console.error('Get visitors for my unit error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
+// @desc    Update visitor approval status (resident: own unit only; security/admin: any)
+// @route   PATCH /api/visitors/:id/approval
+// @access  Private
+const updateVisitorApproval = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'status must be "approved" or "rejected"',
+      });
+    }
+    const visitor = await Visitor.findById(req.params.id);
+    if (!visitor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Visitor not found',
+      });
+    }
+    let allowed = false;
+    const resident = await User.findById(req.userId);
+    if (resident && resident.block && resident.roomNumber) {
+      if (visitor.block === resident.block && visitor.homeNumber === resident.roomNumber) {
+        allowed = true;
+      }
+    }
+    if (!allowed) {
+      const securityUser = await Security.findById(req.userId);
+      const adminUser = await Admin.findById(req.userId);
+      if (securityUser || adminUser) allowed = true;
+    }
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to update this visitor',
+      });
+    }
+    visitor.approvalStatus = status;
+    await visitor.save();
+    const updated = await Visitor.findById(visitor._id)
+      .populate('registeredBy', 'name email mobileNumber')
+      .select('-__v')
+      .lean();
+    const out = { ...updated, id: updated._id ? updated._id.toString() : updated._id };
+    if (out.visitTime) out.visitTime = new Date(out.visitTime).toISOString();
+    res.json({
+      success: true,
+      visitor: out,
+    });
+  } catch (error) {
+    console.error('Update visitor approval error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 // @desc    Get all visitors (for security/admin)
 // @route   GET /api/visitors/all
 // @access  Private (Security/Admin)
@@ -304,12 +405,18 @@ const getAllVisitors = async (req, res) => {
     const visitors = await Visitor.find(query)
       .populate('registeredBy', 'name email mobileNumber')
       .sort({ visitTime: -1 })
-      .select('-__v');
+      .select('-__v')
+      .lean();
 
+    const out = visitors.map((v) => ({
+      ...v,
+      id: v._id ? v._id.toString() : v._id,
+      visitTime: v.visitTime ? new Date(v.visitTime).toISOString() : v.visitTime,
+    }));
     res.json({
       success: true,
-      count: visitors.length,
-      visitors,
+      count: out.length,
+      visitors: out,
     });
   } catch (error) {
     console.error('Get all visitors error:', error);
@@ -385,6 +492,8 @@ module.exports = {
   createVisitor,
   createVisitorBySecurity,
   getUserVisitors,
+  getVisitorsForMyUnit,
+  updateVisitorApproval,
   getVisitorById,
   getAllVisitors,
   verifyVisitorOTP,

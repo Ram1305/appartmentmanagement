@@ -812,6 +812,80 @@ class ApiService {
     }
   }
 
+  /// Get visitors for resident's unit (block + room) for Gate approval.
+  Future<Map<String, dynamic>> getVisitorsForMyUnit() async {
+    try {
+      final response = await _dio.get(ApiConfig.getVisitorsForMyUnit);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'visitors': response.data['visitors'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get visitors',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Update visitor approval status. [status] must be 'approved' or 'rejected'.
+  Future<Map<String, dynamic>> updateVisitorApproval(String visitorId, String status) async {
+    try {
+      final response = await _dio.patch(
+        ApiConfig.visitorApprovalUrl(visitorId),
+        data: {'status': status},
+      );
+      if (response.statusCode == 200 && response.data['visitor'] != null) {
+        return {
+          'success': true,
+          'visitor': response.data['visitor'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to update approval',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get security staff list for residents (name, mobileNumber, profilePic).
+  Future<Map<String, dynamic>> getSecurityList() async {
+    try {
+      final response = await _dio.get(ApiConfig.getSecurityList);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'security': response.data['security'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get security list',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // Create block
   Future<Map<String, dynamic>> createBlock(String name) async {
     try {
@@ -2025,6 +2099,180 @@ class ApiService {
         'success': false,
         'error': e.toString(),
       };
+    }
+  }
+
+  // Amenities
+  Future<Map<String, dynamic>> getAmenities({bool? activeOnly}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (activeOnly == true) queryParams['activeOnly'] = 'true';
+
+      final response = await _dio.get(
+        ApiConfig.getAmenities,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'amenities': response.data['amenities'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get amenities',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {'success': false, 'error': errorMessage};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createAmenity(String name,
+      {int? displayOrder}) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.createAmenity,
+        data: {
+          'name': name,
+          if (displayOrder != null) 'displayOrder': displayOrder,
+        },
+      );
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Amenity created successfully',
+          'amenity': response.data['amenity'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to create amenity',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {'success': false, 'error': errorMessage};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateAmenity(String id,
+      {String? name, bool? isEnabled, int? displayOrder}) async {
+    try {
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (isEnabled != null) data['isEnabled'] = isEnabled;
+      if (displayOrder != null) data['displayOrder'] = displayOrder;
+
+      final response = await _dio.put(
+        ApiConfig.updateAmenityUrl(id),
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Amenity updated successfully',
+          'amenity': response.data['amenity'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to update amenity',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {'success': false, 'error': errorMessage};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAmenity(String id) async {
+    try {
+      final response = await _dio.delete(ApiConfig.deleteAmenityUrl(id));
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Amenity deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to delete amenity',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {'success': false, 'error': errorMessage};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 

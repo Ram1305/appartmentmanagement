@@ -4,6 +4,8 @@ const {
   createVisitor,
   createVisitorBySecurity,
   getUserVisitors,
+  getVisitorsForMyUnit,
+  updateVisitorApproval,
   getVisitorById,
   getAllVisitors,
   verifyVisitorOTP,
@@ -14,6 +16,10 @@ const { protect } = require('../middleware/auth');
 router.post('/security', protect, createVisitorBySecurity);
 router.get('/all/list', protect, getAllVisitors);
 router.post('/verify-otp', protect, verifyVisitorOTP);
+
+// Resident: visitors for my unit + update approval
+router.get('/my-unit', protect, getVisitorsForMyUnit);
+router.patch('/:id/approval', protect, updateVisitorApproval);
 
 // User routes
 router.post('/', protect, createVisitor);
