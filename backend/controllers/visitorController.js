@@ -106,6 +106,87 @@ const createVisitor = async (req, res) => {
   }
 };
 
+// @desc    Create visitor (by security staff – block/home from body)
+// @route   POST /api/visitors/security
+// @access  Private (Security)
+const createVisitorBySecurity = async (req, res) => {
+  try {
+    const {
+      name,
+      mobileNumber,
+      category = 'outsider',
+      type,
+      block,
+      homeNumber,
+      reasonForVisit,
+      vehicleNumber,
+      image,
+      visitTime: visitTimeBody,
+    } = req.body;
+
+    if (!name || !mobileNumber || !block || !homeNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, mobile number, block, and home number are required',
+      });
+    }
+
+    if (category === 'outsider' && !type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Visitor type is required for outsider visitors',
+      });
+    }
+
+    const visitTime = visitTimeBody ? new Date(visitTimeBody) : new Date();
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const visitorId = new mongoose.Types.ObjectId();
+
+    const qrData = JSON.stringify({
+      visitorId: visitorId.toString(),
+      name,
+      mobileNumber,
+      block,
+      homeNumber,
+      visitTime: visitTime.toISOString(),
+      otp,
+    });
+
+    const visitor = await Visitor.create({
+      name,
+      mobileNumber,
+      category,
+      type: category === 'relative' ? 'guest' : type,
+      reasonForVisit: reasonForVisit || undefined,
+      vehicleNumber: vehicleNumber || undefined,
+      image: image || undefined,
+      block,
+      homeNumber,
+      visitTime,
+      otp,
+      qrCode: qrData,
+      registeredBy: req.userId,
+      isRegistered: false,
+    });
+
+    const created = await Visitor.findById(visitor._id)
+      .populate('registeredBy', 'name email mobileNumber')
+      .select('-__v');
+
+    res.status(201).json({
+      success: true,
+      message: 'Visitor created successfully',
+      visitor: created,
+    });
+  } catch (error) {
+    console.error('Create visitor by security error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 // @desc    Get all visitors for a user
 // @route   GET /api/visitors
 // @access  Private (User)
@@ -278,6 +359,7 @@ const verifyVisitorOTP = async (req, res) => {
 
 module.exports = {
   createVisitor,
+  createVisitorBySecurity,
   getUserVisitors,
   getVisitorById,
   getAllVisitors,

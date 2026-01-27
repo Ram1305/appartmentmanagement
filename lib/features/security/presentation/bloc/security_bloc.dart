@@ -141,39 +141,69 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
     Emitter<SecurityState> emit,
   ) async {
     try {
-      final visitors = await _getVisitors();
-      final otp = _generateOTP();
-      
-      // Generate visitor ID for QR code
-      final visitorId = const Uuid().v4();
-      
-      // Create QR code data (JSON string with visitor info)
-      final qrData = jsonEncode({
-        'visitorId': visitorId,
+      // Start from current state so API-loaded visitors are kept; only use cache when not yet loaded
+      List<VisitorModel> visitors;
+      final current = state;
+      if (current is SecurityLoaded) {
+        visitors = List<VisitorModel>.from(current.visitors);
+      } else {
+        visitors = await _getVisitors();
+      }
+
+      // Persist to backend so visitor still appears after close/reopen
+      final payload = <String, dynamic>{
         'name': event.name,
         'mobileNumber': event.mobileNumber,
+        'category': 'outsider',
+        'type': event.type.name,
         'block': event.block,
         'homeNumber': event.homeNumber,
         'visitTime': DateTime.now().toIso8601String(),
-        'otp': otp,
-      });
-      
-      final newVisitor = VisitorModel(
-        id: visitorId,
-        name: event.name,
-        mobileNumber: event.mobileNumber,
-        category: VisitorCategory.outsider,
-        type: event.type,
-        block: event.block,
-        homeNumber: event.homeNumber,
-        visitTime: DateTime.now(),
-        otp: otp,
-        qrCode: qrData,
-        image: event.image,
-        reasonForVisit: event.purposeOfVisit,
-        vehicleNumber: event.vehicleNumber,
-        approvalStatus: VisitorApprovalStatus.pending,
-      );
+        if (event.purposeOfVisit != null && event.purposeOfVisit!.isNotEmpty) 'reasonForVisit': event.purposeOfVisit,
+        if (event.vehicleNumber != null && event.vehicleNumber!.isNotEmpty) 'vehicleNumber': event.vehicleNumber,
+        if (event.image != null && event.image!.isNotEmpty) 'image': event.image,
+      };
+      final response = await _apiService.createSecurityVisitor(payload);
+
+      VisitorModel newVisitor;
+      if (response['success'] == true && response['visitor'] != null) {
+        final raw = response['visitor'];
+        final map = Map<String, dynamic>.from(raw is Map ? raw as Map : {});
+        if (!map.containsKey('id') && map.containsKey('_id')) {
+          map['id'] = map['_id'].toString();
+        }
+        newVisitor = VisitorModel.fromJson(map);
+      } else {
+        // Offline/API failure: add locally so user sees it; will not persist across reopen until API is available
+        final otp = _generateOTP();
+        final visitorId = const Uuid().v4();
+        final qrData = jsonEncode({
+          'visitorId': visitorId,
+          'name': event.name,
+          'mobileNumber': event.mobileNumber,
+          'block': event.block,
+          'homeNumber': event.homeNumber,
+          'visitTime': DateTime.now().toIso8601String(),
+          'otp': otp,
+        });
+        newVisitor = VisitorModel(
+          id: visitorId,
+          name: event.name,
+          mobileNumber: event.mobileNumber,
+          category: VisitorCategory.outsider,
+          type: event.type,
+          block: event.block,
+          homeNumber: event.homeNumber,
+          visitTime: DateTime.now(),
+          otp: otp,
+          qrCode: qrData,
+          image: event.image,
+          reasonForVisit: event.purposeOfVisit,
+          vehicleNumber: event.vehicleNumber,
+          approvalStatus: VisitorApprovalStatus.pending,
+        );
+      }
+
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final blocks = await _getBlocks();

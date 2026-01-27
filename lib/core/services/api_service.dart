@@ -758,6 +758,60 @@ class ApiService {
     }
   }
 
+  /// Create a visitor from security dashboard (persists to backend).
+  /// [data] must include: name, mobileNumber, type, block, homeNumber.
+  /// Optional: image, reasonForVisit, vehicleNumber, visitTime (ISO string).
+  Future<Map<String, dynamic>> createSecurityVisitor(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.createSecurityVisitor,
+        data: data,
+      );
+
+      if (response.statusCode == 201 &&
+          response.data != null &&
+          response.data['visitor'] != null) {
+        return {
+          'success': true,
+          'visitor': response.data['visitor'],
+          'message': response.data['message'] ?? 'Visitor created successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to create visitor',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Create block
   Future<Map<String, dynamic>> createBlock(String name) async {
     try {

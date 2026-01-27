@@ -121,61 +121,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     try {
       var visitors = await _getVisitors();
       var complaints = await _getComplaints();
-      
-      // Initialize dummy visitor data if empty
-      if (visitors.isEmpty) {
-        final indianVisitorNames = [
-          'Ramesh Kumar', 'Sunita Devi', 'Manoj Singh', 'Kiran Patel', 'Lakshmi Reddy',
-          'Suresh Verma', 'Geeta Sharma', 'Rajesh Nair', 'Priya Iyer', 'Amit Joshi',
-        ];
-        
-        final visitorTypes = VisitorType.values;
-        
-        for (int i = 0; i < indianVisitorNames.length && i < 10; i++) {
-          final visitor = VisitorModel(
-            id: const Uuid().v4(),
-            name: indianVisitorNames[i],
-            mobileNumber: '9${(1000000000 + i).toString().substring(1)}',
-            category: VisitorCategory.outsider,
-            type: visitorTypes[i % visitorTypes.length],
-            block: ['A', 'B', 'C'][i % 3],
-            homeNumber: '${(i % 10) + 1}',
-            visitTime: DateTime.now().subtract(Duration(hours: i)),
-          );
-          visitors.add(visitor);
-        }
-        await _saveVisitors(visitors);
-      }
-      
-      // Initialize dummy complaint data if empty
-      if (complaints.isEmpty) {
-        final complaintTypes = ComplaintType.values;
-        final complaintDescriptions = [
-          'Water leakage in bathroom',
-          'Electrical socket not working',
-          'Garbage not being collected',
-          'Lift maintenance required',
-          'Security issue at gate',
-        ];
-        
-        for (int i = 0; i < 5; i++) {
-          final complaint = ComplaintModel(
-            id: const Uuid().v4(),
-            userId: 'dummy_user_$i',
-            userName: 'Rajesh Kumar',
-            type: complaintTypes[i % complaintTypes.length],
-            description: complaintDescriptions[i % complaintDescriptions.length],
-            status: ComplaintStatus.pending,
-            createdAt: DateTime.now().subtract(Duration(days: i)),
-            block: ['A', 'B', 'C'][i % 3],
-            floor: '${(i % 5) + 1}',
-            roomNumber: '${(i % 10) + 101}',
-          );
-          complaints.add(complaint);
-        }
-        await _saveComplaints(complaints);
-      }
-      
       emit(UserLoaded(visitors: visitors, complaints: complaints));
     } catch (e) {
       emit(UserLoaded(visitors: [], complaints: []));

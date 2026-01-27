@@ -40,7 +40,8 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
       case _VisitorListSection.waitingApproval:
         return state.visitors.where((v) => v.approvalStatus == VisitorApprovalStatus.pending).toList();
       case _VisitorListSection.today:
-        return state.visitors.where((v) => _isSameDay(v.visitTime, now)).toList();
+        // Use local date so "today" is correct regardless of server UTC
+        return state.visitors.where((v) => _isSameDay(v.visitTime.toLocal(), now)).toList();
       case _VisitorListSection.upcoming:
         return state.visitors.where((v) => v.visitTime.isAfter(now)).toList();
       case _VisitorListSection.viewAll:
@@ -70,14 +71,14 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
                   child: GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.4,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.45,
                     children: [
                       _GridCard(
                         icon: Icons.person_add,
@@ -116,26 +117,24 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                 ),
                 if (filtered.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.primaryColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15), width: 0.5),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.people, color: AppTheme.primaryColor, size: 20),
-                              const SizedBox(width: 8),
+                              Icon(Icons.people_outline, color: AppTheme.primaryColor, size: 16),
+                              const SizedBox(width: 6),
                               Text(
                                 '${filtered.length} visitor${filtered.length == 1 ? "" : "s"}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primaryColor,
-                                ),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryColor),
                               ),
                             ],
                           ),
@@ -143,19 +142,15 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                       ],
                     ),
                   ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Expanded(
                   child: filtered.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.person_add_disabled,
-                                size: 64,
-                                color: AppTheme.textColor.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
+                              Icon(Icons.person_search, size: 48, color: AppTheme.textColor.withOpacity(0.25)),
+                              const SizedBox(height: 12),
                               Text(
                                 _activeSection == _VisitorListSection.waitingApproval
                                     ? 'No visitors waiting for approval'
@@ -164,194 +159,118 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                                         : _activeSection == _VisitorListSection.upcoming
                                             ? 'No upcoming visitors'
                                             : 'No visitors registered',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppTheme.textColor.withOpacity(0.6),
-                                ),
+                                style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.5)),
                               ),
                             ],
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
                             final visitor = filtered[index];
+                            final vt = visitor.visitTime.toLocal();
+                            final timeStr = '${vt.hour.toString().padLeft(2, '0')}:${vt.minute.toString().padLeft(2, '0')}';
+                            final dateStr = '${vt.day}/${vt.month}/${vt.year}';
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
+                              margin: const EdgeInsets.only(bottom: 8),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppTheme.primaryColor.withOpacity(0.1),
-                                    AppTheme.secondaryColor.withOpacity(0.05),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppTheme.primaryColor.withOpacity(0.2),
-                                  width: 1,
-                                ),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppTheme.dividerColor.withOpacity(0.8)),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(20),
-                                leading: Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        AppTheme.primaryColor,
-                                        AppTheme.primaryColor.withOpacity(0.7),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.primaryColor.withOpacity(0.3),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: visitor.image != null
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(16),
-                                          child: Image.network(
-                                            visitor.image!,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                      : const Icon(Icons.person, color: Colors.white, size: 32),
-                                ),
-                                title: Text(
-                                  visitor.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textColor,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.secondaryColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        visitor.type.displayName.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {},
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    child: Row(
                                       children: [
-                                        Icon(Icons.phone, size: 14, color: AppTheme.textColor.withOpacity(0.6)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          visitor.mobileNumber,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: AppTheme.textColor.withOpacity(0.7),
+                                        Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
+                                          child: visitor.image != null
+                                              ? ClipRRect(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  child: Image.network(visitor.image!, fit: BoxFit.cover),
+                                                )
+                                              : Icon(Icons.person_rounded, color: AppTheme.primaryColor.withOpacity(0.8), size: 24),
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.apartment, size: 14, color: AppTheme.textColor.withOpacity(0.6)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Block ${visitor.block} • Room ${visitor.homeNumber}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: AppTheme.textColor.withOpacity(0.7),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (visitor.otp != null) ...[
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.accentColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: AppTheme.accentColor.withOpacity(0.3),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.lock, size: 16, color: AppTheme.accentColor),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'OTP: ${visitor.otp}',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppTheme.accentColor,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      visitor.name,
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: AppTheme.textColor,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (visitor.approvalStatus == VisitorApprovalStatus.pending)
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(left: 6),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                          color: AppTheme.accentColor.withOpacity(0.15),
+                                                          borderRadius: BorderRadius.circular(4),
+                                                        ),
+                                                        child: Text('PENDING', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.accentColor)),
+                                                      ),
+                                                    ),
+                                                ],
                                               ),
-                                            ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${visitor.type.displayName} • Block ${visitor.block}-${visitor.homeNumber}',
+                                                style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.65)),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.phone_outlined, size: 11, color: AppTheme.textColor.withOpacity(0.5)),
+                                                  const SizedBox(width: 3),
+                                                  Text(visitor.mobileNumber, style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.6))),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(timeStr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryColor.withOpacity(0.9))),
+                                            const SizedBox(height: 1),
+                                            Text(dateStr, style: TextStyle(fontSize: 10, color: AppTheme.textColor.withOpacity(0.5))),
                                           ],
                                         ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                trailing: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Icon(Icons.calendar_today, size: 16, color: AppTheme.textColor.withOpacity(0.6)),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      visitor.visitTime.toString().split(' ')[0],
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.textColor.withOpacity(0.6),
-                                      ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      visitor.visitTime.toString().split(' ')[1].substring(0, 5),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.textColor.withOpacity(0.6),
-                                      ),
-                                    ),
-                                    if (visitor.approvalStatus == VisitorApprovalStatus.pending) ...[
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.accentColor.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text('PENDING', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.accentColor)),
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
                               ),
                             );
@@ -531,50 +450,78 @@ class _WaitingForApprovalSheet extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_outline, size: 64, color: AppTheme.secondaryColor.withOpacity(0.6)),
-                        const SizedBox(height: 16),
-                        Text('No visitors waiting for approval', style: TextStyle(fontSize: 16, color: AppTheme.textColor.withOpacity(0.6))),
+                        Icon(Icons.check_circle_outline, size: 48, color: AppTheme.secondaryColor.withOpacity(0.5)),
+                        const SizedBox(height: 12),
+                        Text('No visitors waiting for approval', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.5))),
                       ],
                     ),
                   )
                 : ListView.builder(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     itemCount: visitors.length,
                     itemBuilder: (context, index) {
                       final v = visitors[index];
+                      final vt = v.visitTime.toLocal();
+                      final timeStr = '${vt.hour.toString().padLeft(2, '0')}:${vt.minute.toString().padLeft(2, '0')}';
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.08), AppTheme.secondaryColor.withOpacity(0.05)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.accentColor.withOpacity(0.25)),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(radius: 28, backgroundColor: AppTheme.primaryColor.withOpacity(0.2), child: v.image != null ? ClipOval(child: Image.network(v.image!, fit: BoxFit.cover, width: 56, height: 56, errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white))) : const Icon(Icons.person, color: Colors.white)),
-                            const SizedBox(width: 16),
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: v.image != null
+                                  ? ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(v.image!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: AppTheme.primaryColor.withOpacity(0.8), size: 24)))
+                                  : Icon(Icons.person_rounded, color: AppTheme.primaryColor.withOpacity(0.8), size: 24),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(v.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
-                                  const SizedBox(height: 4),
-                                  Text('Block ${v.block} • Room ${v.homeNumber}', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.7))),
-                                  Text('${v.visitTime.day}/${v.visitTime.month}/${v.visitTime.year}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.6))),
+                                  Text(v.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textColor)),
+                                  const SizedBox(height: 2),
+                                  Text('Block ${v.block}-${v.homeNumber} • ${v.type.displayName}', style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.65))),
+                                  const SizedBox(height: 2),
+                                  Text(timeStr, style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.5))),
                                 ],
                               ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                context.read<SecurityBloc>().add(ApproveVisitorEvent(visitorId: v.id));
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${v.name} approved'), backgroundColor: AppTheme.secondaryColor));
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(Icons.check_circle, size: 20),
-                              label: const Text('Approve'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            Material(
+                              color: AppTheme.secondaryColor,
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () {
+                                  context.read<SecurityBloc>().add(ApproveVisitorEvent(visitorId: v.id));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${v.name} approved'), backgroundColor: AppTheme.secondaryColor, behavior: SnackBarBehavior.floating));
+                                  Navigator.pop(context);
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.check_circle, size: 16, color: Colors.white),
+                                      SizedBox(width: 4),
+                                      Text('Approve', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -685,40 +632,68 @@ class _UpcomingVisitorsSheetState extends State<_UpcomingVisitorsSheet> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Flexible(
             child: forDate.isEmpty
-                ? Center(child: Text('No visitors on selected date', style: TextStyle(fontSize: 15, color: AppTheme.textColor.withOpacity(0.6))))
+                ? Center(child: Text('No visitors on selected date', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.5))))
                 : ListView.builder(
                     controller: widget.scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     itemCount: forDate.length,
                     itemBuilder: (context, index) {
                       final v = forDate[index];
+                      final vt = v.visitTime.toLocal();
+                      final timeStr = '${vt.hour.toString().padLeft(2, '0')}:${vt.minute.toString().padLeft(2, '0')}';
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.dividerColor.withOpacity(0.8)),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(radius: 24, backgroundColor: AppTheme.primaryColor.withOpacity(0.2), child: const Icon(Icons.person, color: Colors.white)),
-                            const SizedBox(width: 14),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: v.image != null
+                                  ? ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(v.image!, fit: BoxFit.cover))
+                                  : Icon(Icons.person_rounded, color: AppTheme.primaryColor.withOpacity(0.8), size: 22),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(v.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
-                                  Text('Block ${v.block} • Room ${v.homeNumber}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.7))),
-                                  Text('${v.visitTime.hour.toString().padLeft(2, '0')}:${v.visitTime.minute.toString().padLeft(2, '0')}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.6))),
+                                  Text(v.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textColor)),
+                                  const SizedBox(height: 2),
+                                  Text('${v.type.displayName} • Block ${v.block}-${v.homeNumber}', style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.65))),
                                 ],
                               ),
                             ),
-                            if (v.approvalStatus == VisitorApprovalStatus.pending)
-                              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppTheme.accentColor.withOpacity(0.2), borderRadius: BorderRadius.circular(8)), child: Text('PENDING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentColor))),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(timeStr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryColor.withOpacity(0.9))),
+                                if (v.approvalStatus == VisitorApprovalStatus.pending)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                      decoration: BoxDecoration(color: AppTheme.accentColor.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                                      child: Text('PENDING', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.accentColor)),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
                       );
@@ -1074,91 +1049,96 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, -4))],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2))),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Verify Visitor', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)), style: IconButton.styleFrom(backgroundColor: AppTheme.dividerColor)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                InkWell(
-                  onTap: _openScanner,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.secondaryColor.withOpacity(0.08)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      child: SingleChildScrollView(
+        controller: widget.scrollController,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Verify Visitor', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)), style: IconButton.styleFrom(backgroundColor: AppTheme.dividerColor)),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    InkWell(
+                      onTap: _openScanner,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.secondaryColor.withOpacity(0.08)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor, size: 32)),
+                            const SizedBox(width: 16),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Scan QR code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textColor)), const SizedBox(height: 4), Text('Open camera to scan visitor\'s QR', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.6)))])),
+                            Icon(Icons.chevron_right, color: AppTheme.textColor.withOpacity(0.5)),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor, size: 32)),
-                        const SizedBox(width: 16),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Scan QR code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textColor)), const SizedBox(height: 4), Text('Open camera to scan visitor\'s QR', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.6)))])),
-                        Icon(Icons.chevron_right, color: AppTheme.textColor.withOpacity(0.5)),
-                      ],
+                    const SizedBox(height: 16),
+                    Text('Or verify with OTP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textColor.withOpacity(0.7))),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _visitorIdController,
+                      decoration: InputDecoration(
+                        labelText: 'Visitor ID',
+                        hintText: 'Enter visitor ID',
+                        prefixIcon: Icon(Icons.badge_outlined, color: AppTheme.primaryColor),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: InputDecoration(
+                        labelText: 'OTP',
+                        hintText: '6-digit OTP',
+                        prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_message != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_message!, style: TextStyle(color: _success ? AppTheme.secondaryColor : AppTheme.errorColor, fontSize: 14, fontWeight: FontWeight.w500))),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _verifyOtp,
+                        icon: const Icon(Icons.verified_user, size: 22),
+                        label: const Text('Verify OTP'),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text('Or verify with OTP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textColor.withOpacity(0.7))),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _visitorIdController,
-                  decoration: InputDecoration(
-                    labelText: 'Visitor ID',
-                    hintText: 'Enter visitor ID',
-                    prefixIcon: Icon(Icons.badge_outlined, color: AppTheme.primaryColor),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  decoration: InputDecoration(
-                    labelText: 'OTP',
-                    hintText: '6-digit OTP',
-                    prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (_message != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_message!, style: TextStyle(color: _success ? AppTheme.secondaryColor : AppTheme.errorColor, fontSize: 14, fontWeight: FontWeight.w500))),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _verifyOtp,
-                    icon: const Icon(Icons.verified_user, size: 22),
-                    label: const Text('Verify OTP'),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
-        ],
+        ),
       ),
     );
   }
@@ -1216,9 +1196,13 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
 
   List<_RoomOption> get _blockRooms {
     if (_selectedBlock == null) return [];
+    final seen = <String>{};
     final list = <_RoomOption>[];
     for (final f in _selectedBlock!.floors) {
       for (final r in f.rooms) {
+        final key = '${f.id}_${r.id}';
+        if (seen.contains(key)) continue;
+        seen.add(key);
         list.add(_RoomOption(f, r));
       }
     }
@@ -1237,8 +1221,10 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
     // When blocks list updates (e.g. from API), keep selection by id so dropdown value matches an item
     if (_selectedBlock != null && oldWidget.blocks != widget.blocks) {
       final matched = widget.blocks.where((b) => b.id == _selectedBlock!.id).toList();
-      _selectedBlock = matched.isNotEmpty ? matched.first : null;
-      if (_selectedBlock == null) _selectedRoomOption = null;
+      final newBlock = matched.isNotEmpty ? matched.first : null;
+      _selectedBlock = newBlock;
+      // Always clear room when block list or block reference changes so dropdown value stays in items list
+      _selectedRoomOption = null;
     }
   }
 
@@ -1286,6 +1272,66 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
           );
       Navigator.pop(context);
     }
+  }
+
+  /// Builds room dropdown using a single list for both value and items so Flutter's equality check passes.
+  Widget _buildRoomDropdown() {
+    final blockRooms = _blockRooms;
+    _RoomOption? value;
+    if (_selectedRoomOption != null) {
+      for (final o in blockRooms) {
+        if (o.floor.id == _selectedRoomOption!.floor.id &&
+            o.room.id == _selectedRoomOption!.room.id) {
+          value = o;
+          break;
+        }
+      }
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.dividerColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: DropdownButtonFormField<_RoomOption>(
+            value: value,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Select Room / Flat',
+              prefixIcon: Icon(Icons.door_front_door, color: AppTheme.primaryColor, size: 22),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
+            ),
+            hint: Text(
+              blockRooms.isEmpty ? 'No rooms in this block' : 'Choose room',
+              style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16),
+            ),
+            items: blockRooms.map((opt) {
+              return DropdownMenuItem<_RoomOption>(
+                value: opt,
+                child: Text(opt.label, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: blockRooms.isEmpty ? null : (opt) {
+              setState(() => _selectedRoomOption = opt);
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -1393,42 +1439,7 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
                     ),
                   ),
                   if (_selectedBlock != null) ...[
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppTheme.dividerColor),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: DropdownButtonFormField<_RoomOption>(
-                        value: _selectedRoomOption,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Select Room / Flat',
-                          prefixIcon: Icon(Icons.door_front_door, color: AppTheme.primaryColor, size: 22),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
-                        ),
-                        hint: Text(_blockRooms.isEmpty ? 'No rooms in this block' : 'Choose room', style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16)),
-                        items: _blockRooms.map((opt) {
-                          return DropdownMenuItem(
-                            value: opt,
-                            child: Text(opt.label, overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
-                        onChanged: _blockRooms.isEmpty ? null : (opt) {
-                          setState(() => _selectedRoomOption = opt);
-                        },
-                      ),
-                    ),
+                    _buildRoomDropdown(),
                   ],
                   if (_selectedBlock != null && _blockRooms.isEmpty) ...[
                     const SizedBox(height: 14),

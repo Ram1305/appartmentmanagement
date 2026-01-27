@@ -101,6 +101,7 @@ class ApiConfig {
   // Visitor endpoints (security: all visitors / today)
   static String get visitorsBase => '$baseUrl/visitors';
   static String get getSecurityVisitors => '$visitorsBase/all/list';
+  static String get createSecurityVisitor => '$visitorsBase/security';
 
   // Health check
   static String get health => '$baseUrl/health';
