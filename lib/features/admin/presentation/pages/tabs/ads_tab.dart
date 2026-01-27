@@ -168,17 +168,26 @@ class _AdsTabState extends State<AdsTab> {
                       ),
                       ElevatedButton.icon(
                         onPressed: _isUploading ? null : _addAd,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: const Size(0, 36),
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
                         icon: _isUploading
                             ? const SizedBox(
-                                width: 16,
-                                height: 16,
+                                width: 14,
+                                height: 14,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: Colors.white,
                                 ),
                               )
-                            : const Icon(Icons.add),
-                        label: Text(_isUploading ? 'Uploading...' : 'Add Ad'),
+                            : const Icon(Icons.add, size: 18),
+                        label: Text(
+                          _isUploading ? 'Uploading...' : 'Add Ad',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     ],
                   ),

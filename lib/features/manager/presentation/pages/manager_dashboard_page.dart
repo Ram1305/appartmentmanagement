@@ -996,10 +996,16 @@ class _EventsTabState extends State<_EventsTab> {
                   onPressed: () {
                     AddEventDialog.show(context, _addEvent);
                   },
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Event', style: TextStyle(fontSize: 13)),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: const Size(0, 36),
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text(
+                    'Add Event',
+                    style: TextStyle(fontSize: 13),
                   ),
                 ),
               ),

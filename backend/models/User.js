@@ -113,6 +113,16 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // Account lockout fields
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    lockUntil: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -152,6 +162,35 @@ userSchema.methods.verifyOTP = function (enteredOTP) {
   }
   return true;
 };
+
+// Account lockout methods
+userSchema.methods.incLoginAttempts = async function () {
+  // If we have a previous lock that has expired, restart at 1
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $set: { failedLoginAttempts: 1 },
+      $unset: { lockUntil: 1 },
+    });
+  }
+  const updates = { $inc: { failedLoginAttempts: 1 } };
+  // Lock account after 5 failed attempts for 2 hours
+  if (this.failedLoginAttempts + 1 >= 5 && !this.isLocked) {
+    updates.$set = { lockUntil: Date.now() + 2 * 60 * 60 * 1000 }; // 2 hours
+  }
+  return this.updateOne(updates);
+};
+
+userSchema.methods.resetLoginAttempts = async function () {
+  return this.updateOne({
+    $set: { failedLoginAttempts: 0 },
+    $unset: { lockUntil: 1 },
+  });
+};
+
+// Virtual for checking if account is locked
+userSchema.virtual('isLocked').get(function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+});
 
 module.exports = mongoose.model('User', userSchema);
 

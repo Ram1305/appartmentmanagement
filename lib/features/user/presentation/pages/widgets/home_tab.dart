@@ -206,24 +206,35 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.comingSoon),
       _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.comingSoon),
       _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.comingSoon),
+      _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.comingSoon),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.9,
-      ),
-      itemCount: options.length,
-      itemBuilder: (context, index) {
-        final o = options[index];
-        return _QuickOptionTile(
-          title: o.title,
-          icon: o.icon,
-          onTap: () => _handleQuickOptionTap(o),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = 4;
+        final spacing = 8.0;
+        final availableWidth = constraints.maxWidth;
+        final itemWidth = (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+        final itemHeight = itemWidth * 1.1; // Slightly taller for better content fit
+        
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: itemWidth / itemHeight,
+          ),
+          itemCount: options.length,
+          itemBuilder: (context, index) {
+            final o = options[index];
+            return _QuickOptionTile(
+              title: o.title,
+              icon: o.icon,
+              onTap: () => _handleQuickOptionTap(o),
+            );
+          },
         );
       },
     );
@@ -285,29 +296,35 @@ class _QuickOptionTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: AppTheme.primaryColor, size: 22),
                 ),
-                child: Icon(icon, color: AppTheme.primaryColor, size: 24),
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textColor,
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textColor,
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

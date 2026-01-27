@@ -9,9 +9,7 @@ import 'tabs/managers_tab.dart';
 import 'tabs/security_tab.dart';
 import 'tabs/users_tab.dart';
 import 'tabs/maintenance_tab.dart';
-import 'tabs/tenants_tab.dart';
 import 'tabs/payments_tab.dart';
-import 'tabs/permissions_tab.dart';
 import 'tabs/notices_tab.dart';
 import 'tabs/ads_tab.dart';
 
@@ -28,7 +26,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 11, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
     context.read<AdminBloc>().add(LoadBlocksEvent());
     // Initialize dummy data on first load
     context.read<AdminBloc>().add(InitializeDummyDataEvent());
@@ -76,9 +74,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
             Tab(icon: Icon(Icons.security), text: 'Security'),
             Tab(icon: Icon(Icons.person), text: 'Users'),
             Tab(icon: Icon(Icons.account_balance_wallet), text: 'Maintenance'),
-            Tab(icon: Icon(Icons.how_to_reg), text: 'Tenants'),
             Tab(icon: Icon(Icons.payment), text: 'Payments'),
-            Tab(icon: Icon(Icons.security), text: 'Permissions'),
             Tab(icon: Icon(Icons.notifications), text: 'Notices'),
             Tab(icon: Icon(Icons.campaign), text: 'Ads'),
           ],
@@ -111,9 +107,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 SecurityTab(state: state),
                 UsersTab(state: state),
                 MaintenanceTab(state: state),
-                TenantsTab(state: state),
                 PaymentsTab(state: state),
-                PermissionsTab(state: state),
                 NoticesTab(state: state),
                 AdsTab(state: state),
               ],

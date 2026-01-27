@@ -20,112 +20,115 @@ class UserTypeSelectionPage extends StatelessWidget {
       backgroundColor: AppTheme.primaryColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 20),
-                  // App Logo/Icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.apartment,
-                      size: 80,
-                      color: AppTheme.primaryColor,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // App Logo/Icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    // color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.asset(
+                      'assets/appicon.png',
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  const Text(
-                    'Apartment Management',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
-                    ),
+                ),
+                const SizedBox(height: 30),
+                const Text(
+                  'Apartment Management',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'System',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                      letterSpacing: 1.0,
-                    ),
+                ),
+                // const SizedBox(height: 10),
+                // const Text(
+                //   'System',
+                //   style: TextStyle(
+                //     fontSize: 24,
+                //     fontWeight: FontWeight.w500,
+                //     color: Colors.white70,
+                //     letterSpacing: 1.0,
+                //   ),
+                // ),
+                const SizedBox(height: 40),
+                const Text(
+                  'Select Login Type',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Select Login Type',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                ),
+                const SizedBox(height: 24),
+                // User Type Options Grid
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 35),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                    children: [
+                      _UserTypeOption(
+                        icon: Icons.admin_panel_settings,
+                        title: 'Admin',
+                        subtitle: 'Administrator Access',
+                        color: Colors.red.shade400,
+                        onTap: () => _navigateToLogin(context, UserType.admin),
+                      ),
+                      _UserTypeOption(
+                        icon: Icons.business_center,
+                        title: 'Manager',
+                        subtitle: 'Manager Access',
+                        color: Colors.orange.shade400,
+                        onTap: () => _navigateToLogin(context, UserType.manager),
+                      ),
+                      _UserTypeOption(
+                        icon: Icons.person,
+                        title: 'User',
+                        subtitle: 'Resident Access',
+                        color: Colors.blue.shade400,
+                        onTap: () => _navigateToLogin(context, UserType.user),
+                      ),
+                      _UserTypeOption(
+                        icon: Icons.security,
+                        title: 'Security',
+                        subtitle: 'Security Personnel Access',
+                        color: Colors.green.shade400,
+                        onTap: () => _navigateToLogin(context, UserType.security),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  // User Type Options List
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      children: [
-                        _UserTypeOption(
-                          icon: Icons.admin_panel_settings,
-                          title: 'Admin',
-                          subtitle: 'Administrator Access',
-                          color: Colors.red.shade400,
-                          onTap: () => _navigateToLogin(context, UserType.admin),
-                        ),
-                        const SizedBox(height: 16),
-                        _UserTypeOption(
-                          icon: Icons.business_center,
-                          title: 'Manager',
-                          subtitle: 'Manager Access',
-                          color: Colors.orange.shade400,
-                          onTap: () => _navigateToLogin(context, UserType.manager),
-                        ),
-                        const SizedBox(height: 16),
-                        _UserTypeOption(
-                          icon: Icons.person,
-                          title: 'User',
-                          subtitle: 'Resident Access',
-                          color: Colors.blue.shade400,
-                          onTap: () => _navigateToLogin(context, UserType.user),
-                        ),
-                        const SizedBox(height: 16),
-                        _UserTypeOption(
-                          icon: Icons.security,
-                          title: 'Security',
-                          subtitle: 'Security Personnel Access',
-                          color: Colors.green.shade400,
-                          onTap: () => _navigateToLogin(context, UserType.security),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                ),
+                const SizedBox(height: 20),
+              ],
               ),
             ),
           ),
         ),
-      ),
+    
     );
   }
 }
@@ -151,12 +154,12 @@ class _UserTypeOption extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -165,50 +168,34 @@ class _UserTypeOption extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,
                   color: color,
-                  size: 28,
+                  size: 36,
                 ),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textColor.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textColor,
                 ),
+                textAlign: TextAlign.center,
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: AppTheme.textColor.withOpacity(0.4),
-                size: 20,
-              ),
+              // const SizedBox(height: 4),
+             
             ],
           ),
         ),

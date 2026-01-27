@@ -199,11 +199,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Email or username is required' });
     }
 
-    console.log('=== LOGIN ATTEMPT ===');
-    console.log('Identifier:', identifier);
-    console.log('Requested userType:', userType);
-    console.log('Password provided:', password ? 'Yes (hidden)' : 'No');
-
     // Check all collections for the user and determine which model they belong to
     // Check Admin, Manager, Security first, then User (to prioritize admin/manager/security over regular users)
     let user = null;
@@ -215,50 +210,78 @@ const loginUser = async (req, res) => {
       { Model: User, type: 'user' }
     ];
     
-    console.log('Searching for user in collections...');
     for (const { Model, type } of modelMap) {
-      console.log(`Checking ${type} collection...`);
-      user = await Model.findOne({ $or: [{ email: identifier }, { username: identifier }] }).select('+password');
+      user = await Model.findOne({ $or: [{ email: identifier }, { username: identifier }] })
+        .select('+password +failedLoginAttempts +lockUntil');
       if (user) {
         foundModelType = type;
-        console.log(`✓ User found in ${type} collection`);
-        // Detect whether the match was by email or username
-        const matchedBy = (user.email && user.email.toLowerCase() === identifier) ? 'email' : ((user.username && user.username.toLowerCase() === identifier) ? 'username' : 'unknown');
-        console.log(`Matched by: ${matchedBy}`);
-        console.log(`User ID: ${user._id}`);
-        console.log(`User name: ${user.name}`);
-        console.log(`User email: ${user.email}`);
-        console.log(`User userType in DB: ${user.userType}`);
-        console.log(`User isActive: ${user.isActive}`);
-        console.log(`User status: ${user.status}`);
         break;
-      } else {
-        console.log(`✗ Not found in ${type} collection`);
       }
     }
 
     if (!user) {
-      console.log('ERROR: User not found in any collection');
+      // Don't reveal if user exists or not - security best practice
       return res.status(401).json({
         error: 'Invalid email or password',
       });
     }
 
-    console.log('Verifying password...');
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+      return res.status(423).json({
+        error: `Account temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minute(s).`,
+      });
+    }
+
+    // Verify password
     const isPasswordMatch = await user.comparePassword(password);
-    console.log('Password match:', isPasswordMatch);
 
     if (!isPasswordMatch) {
-      console.log('ERROR: Password does not match');
+      // Increment failed login attempts
+      if (user.incLoginAttempts) {
+        await user.incLoginAttempts();
+      } else {
+        // Fallback for models without lockout (Admin, Manager, Security)
+        const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+        if (failedAttempts >= 5) {
+          await Model.updateOne(
+            { _id: user._id },
+            {
+              $set: {
+                failedLoginAttempts: failedAttempts,
+                lockUntil: Date.now() + 2 * 60 * 60 * 1000, // 2 hours
+              },
+            }
+          );
+        } else {
+          await Model.updateOne(
+            { _id: user._id },
+            { $inc: { failedLoginAttempts: 1 } }
+          );
+        }
+      }
+      
       return res.status(401).json({
         error: 'Invalid email or password',
       });
+    }
+
+    // Reset failed login attempts on successful login
+    if (user.resetLoginAttempts) {
+      await user.resetLoginAttempts();
+    } else {
+      await Model.updateOne(
+        { _id: user._id },
+        {
+          $set: { failedLoginAttempts: 0 },
+          $unset: { lockUntil: 1 },
+        }
+      );
     }
 
     // Check if user is active
-    console.log('Checking if user is active...');
     if (!user.isActive) {
-      console.log('ERROR: User account is deactivated');
       return res.status(403).json({
         error: 'Your account has been deactivated. Please contact administrator.',
       });
@@ -271,83 +294,51 @@ const loginUser = async (req, res) => {
     if (foundModelType === 'security') {
       // For Security users, userType is immutable and should always be 'security'
       actualUserType = 'security';
-      console.log('Security user detected - using "security" as actualUserType');
     } else {
       // For other user types, use the user's userType field or fall back to foundModelType
       actualUserType = user.userType || foundModelType;
     }
-    
-    console.log('Checking userType...');
-    console.log(`Current user.userType: ${user.userType}`);
-    console.log(`Found model type: ${foundModelType}`);
-    console.log(`Actual userType to use: ${actualUserType}`);
 
     // Update userType if it doesn't match the collection (for data consistency)
     // Note: Security model has immutable userType, so we skip update for security users
     if (foundModelType !== 'security' && (!user.userType || user.userType !== foundModelType)) {
-      console.log('Updating userType to match found model type...');
       user.userType = foundModelType;
       // Only update status if it's admin or manager
       if (foundModelType === 'admin' || foundModelType === 'manager') {
         user.status = 'approved';
-        console.log('Setting status to approved for admin/manager');
       }
       try {
         await user.save();
-        console.log('✓ UserType updated successfully in database');
       } catch (saveError) {
         // If save fails, just continue with the actualUserType
-        console.log('⚠ Note: Could not update userType in database, using actual userType:', actualUserType);
-        console.log('Save error:', saveError.message);
       }
-    } else if (foundModelType === 'security') {
-      // For security users, userType is immutable, so we just use foundModelType
-      console.log('✓ Security userType is immutable, skipping update');
-    } else {
-      console.log('✓ UserType already matches found model type');
     }
     
     // Ensure security users have approved status (they should by default, but double-check)
     if (foundModelType === 'security' && user.status !== 'approved') {
-      console.log('Setting status to approved for security user');
       user.status = 'approved';
       try {
         await user.save();
-        console.log('✓ Security user status updated to approved');
       } catch (saveError) {
-        console.log('⚠ Could not update security user status:', saveError.message);
+        // Continue even if save fails
       }
     }
 
     // Check user type if specified - use actualUserType for comparison (not just foundModelType)
-    console.log('Validating requested userType...');
-    console.log(`Requested userType: "${userType}" (type: ${typeof userType})`);
-    console.log(`Actual userType: "${actualUserType}" (type: ${typeof actualUserType})`);
-    
     // Normalize both values for comparison (trim and lowercase)
     const normalizedRequestedType = userType ? userType.toString().toLowerCase().trim() : null;
     const normalizedActualType = actualUserType ? actualUserType.toString().toLowerCase().trim() : null;
     
-    console.log(`Normalized requested: "${normalizedRequestedType}"`);
-    console.log(`Normalized actual: "${normalizedActualType}"`);
-    
     if (normalizedRequestedType && normalizedActualType !== normalizedRequestedType) {
-      console.log(`ERROR: UserType mismatch! Requested: "${normalizedRequestedType}", Actual: "${normalizedActualType}"`);
       return res.status(403).json({
         error: `Access denied. This account is not a ${userType}`,
       });
     }
-    console.log('✓ UserType validation passed');
 
     const token = generateToken(user._id);
-    console.log('Token generated successfully');
 
     // Use actualUserType to ensure correct userType is returned
     const finalUserType = actualUserType || foundModelType || 'user';
-    console.log(`Final userType to return: ${finalUserType}`);
-
-    console.log('=== LOGIN SUCCESS ===');
-    console.log('Returning user data...');
     
     res.json({
       message: 'Login successful',
@@ -377,11 +368,9 @@ const loginUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('=== LOGIN ERROR ===');
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Login error:', error.message);
     res.status(500).json({
-      error: error.message || 'Server error',
+      error: 'An error occurred during login. Please try again.',
     });
   }
 };
@@ -400,8 +389,6 @@ const sendOTP = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    console.log('=== SEND OTP ===');
-    console.log('Email:', normalizedEmail);
 
     // Check all collections for existing user (like login does)
     let user = null;
@@ -412,11 +399,9 @@ const sendOTP = async (req, res) => {
       { Model: User, type: 'user' }
     ];
     
-    console.log('Checking if user exists in collections...');
     for (const { Model, type } of modelMap) {
       user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] });
       if (user) {
-        console.log(`✓ User found in ${type} collection`);
         break;
       }
     }
@@ -424,29 +409,23 @@ const sendOTP = async (req, res) => {
     let otp;
     if (user) {
       // User exists - generate OTP and save to user document
-      console.log('User exists, generating OTP and saving to user document');
       otp = user.generateOTP();
       await user.save();
     } else {
       // User doesn't exist (registration flow) - store OTP temporarily
-      console.log('User does not exist, storing OTP temporarily for registration');
       otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
       tempOtpStore.set(normalizedEmail, { otp, expiry });
-      console.log(`OTP stored temporarily for ${normalizedEmail}, expires in 10 minutes`);
     }
 
     // Send OTP via email
-    console.log('Sending OTP email...');
     const emailSent = await sendOTPEmail(normalizedEmail, otp);
 
     if (emailSent) {
-      console.log('✓ OTP email sent successfully');
       res.json({
         message: 'OTP sent to your email',
       });
     } else {
-      console.log('✗ Failed to send OTP email');
       // Clean up temporary OTP if stored
       if (!user) {
         tempOtpStore.delete(normalizedEmail);
@@ -477,9 +456,6 @@ const verifyOTP = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    console.log('=== VERIFY OTP ===');
-    console.log('Email:', normalizedEmail);
-    console.log('OTP:', otp);
 
     // Check all collections for existing user
     let user = null;
@@ -490,11 +466,9 @@ const verifyOTP = async (req, res) => {
       { Model: User, type: 'user' }
     ];
     
-    console.log('Checking if user exists in collections...');
     for (const { Model, type } of modelMap) {
       user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] }).select('+otp +otpExpiry');
       if (user) {
-        console.log(`✓ User found in ${type} collection`);
         break;
       }
     }
@@ -502,18 +476,15 @@ const verifyOTP = async (req, res) => {
     let isValid = false;
     if (user) {
       // User exists - verify OTP from user document
-      console.log('User exists, verifying OTP from user document');
       isValid = user.verifyOTP(otp);
       if (isValid) {
         // Clear OTP after verification
         user.otp = undefined;
         user.otpExpiry = undefined;
         await user.save();
-        console.log('✓ OTP verified and cleared from user document');
       }
     } else {
       // User doesn't exist - check temporary OTP store (registration flow)
-      console.log('User does not exist, checking temporary OTP store');
       const tempOtpData = tempOtpStore.get(normalizedEmail);
       if (tempOtpData) {
         if (tempOtpData.otp === otp) {
@@ -521,16 +492,10 @@ const verifyOTP = async (req, res) => {
             isValid = true;
             // Remove temporary OTP after verification
             tempOtpStore.delete(normalizedEmail);
-            console.log('✓ OTP verified from temporary store and removed');
           } else {
-            console.log('✗ Temporary OTP expired');
             tempOtpStore.delete(normalizedEmail);
           }
-        } else {
-          console.log('✗ Temporary OTP does not match');
         }
-      } else {
-        console.log('✗ No temporary OTP found for this email');
       }
     }
 
@@ -565,11 +530,29 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase().trim();
 
+    // Check all collections for the user
+    let user = null;
+    const modelMap = [
+      { Model: Admin, type: 'admin' },
+      { Model: Manager, type: 'manager' },
+      { Model: Security, type: 'security' },
+      { Model: User, type: 'user' }
+    ];
+    
+    for (const { Model, type } of modelMap) {
+      user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] });
+      if (user) {
+        break;
+      }
+    }
+
+    // Don't reveal if user exists or not - security best practice
     if (!user) {
-      return res.status(404).json({
-        error: 'User not found with this email',
+      // Still return success to prevent email enumeration
+      return res.json({
+        message: 'If an account exists with this email, a password reset OTP has been sent.',
       });
     }
 
@@ -577,11 +560,11 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     // Send password reset OTP via email
-    const emailSent = await sendPasswordResetEmail(email, otp);
+    const emailSent = await sendPasswordResetEmail(normalizedEmail, otp);
 
     if (emailSent) {
       res.json({
-        message: 'Password reset OTP sent to your email',
+        message: 'If an account exists with this email, a password reset OTP has been sent.',
       });
     } else {
       res.status(500).json({
@@ -589,9 +572,9 @@ const forgotPassword = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Forgot password error:', error.message);
     res.status(500).json({
-      error: error.message || 'Server error',
+      error: 'An error occurred. Please try again later.',
     });
   }
 };
@@ -609,17 +592,37 @@ const resetPassword = async (req, res) => {
       });
     }
 
+    // Password validation: at least 6 characters
     if (newPassword.length < 6) {
       return res.status(400).json({
-        error: 'Password must be at least 6 characters',
+        error: 'Password must be at least 6 characters long',
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpiry +password');
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check all collections for the user
+    let user = null;
+    let UserModel = null;
+    const modelMap = [
+      { Model: Admin, type: 'admin' },
+      { Model: Manager, type: 'manager' },
+      { Model: Security, type: 'security' },
+      { Model: User, type: 'user' }
+    ];
+    
+    for (const { Model, type } of modelMap) {
+      user = await Model.findOne({ $or: [{ email: normalizedEmail }, { username: normalizedEmail }] })
+        .select('+otp +otpExpiry +password');
+      if (user) {
+        UserModel = Model;
+        break;
+      }
+    }
 
     if (!user) {
       return res.status(404).json({
-        error: 'User not found',
+        error: 'Invalid OTP or email',
       });
     }
 
@@ -635,15 +638,18 @@ const resetPassword = async (req, res) => {
     user.password = newPassword;
     user.otp = undefined;
     user.otpExpiry = undefined;
+    // Reset failed login attempts on password reset
+    user.failedLoginAttempts = 0;
+    user.lockUntil = undefined;
     await user.save();
 
     res.json({
       message: 'Password reset successfully',
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Reset password error:', error.message);
     res.status(500).json({
-      error: error.message || 'Server error',
+      error: 'An error occurred. Please try again later.',
     });
   }
 };
