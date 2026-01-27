@@ -22,6 +22,8 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  AdminLoaded? _lastLoadedState;
+  bool _errorSnackBarShown = false;
 
   @override
   void initState() {
@@ -94,10 +96,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
           if (state is AdminLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state is AdminError) {
-            return Center(child: Text('Error: ${state.message}'));
-          }
           if (state is AdminLoaded) {
+            _lastLoadedState = state;
+            _errorSnackBarShown = false;
             return TabBarView(
               controller: _tabController,
               children: [
@@ -111,6 +112,68 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 NoticesTab(state: state),
                 AdsTab(state: state),
               ],
+            );
+          }
+          if (state is AdminError) {
+            if (_lastLoadedState != null) {
+              if (!_errorSnackBarShown) {
+                _errorSnackBarShown = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 4),
+                      action: SnackBarAction(
+                        label: 'Retry',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          context.read<AdminBloc>().add(LoadBlocksEvent());
+                        },
+                      ),
+                    ),
+                  );
+                  context.read<AdminBloc>().add(LoadBlocksEvent());
+                });
+              }
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  OverviewTab(state: _lastLoadedState!),
+                  BlocksTab(state: _lastLoadedState!),
+                  ManagersTab(state: _lastLoadedState!),
+                  SecurityTab(state: _lastLoadedState!),
+                  UsersTab(state: _lastLoadedState!),
+                  MaintenanceTab(state: _lastLoadedState!),
+                  PaymentsTab(state: _lastLoadedState!),
+                  NoticesTab(state: _lastLoadedState!),
+                  AdsTab(state: _lastLoadedState!),
+                ],
+              );
+            }
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${state.message}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[800]),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => context.read<AdminBloc>().add(LoadBlocksEvent()),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
           return const Center(child: CircularProgressIndicator());

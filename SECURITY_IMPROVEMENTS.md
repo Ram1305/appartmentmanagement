@@ -5,7 +5,7 @@ This document outlines the security enhancements implemented in the Apartment Ma
 ## ✅ Completed Security Enhancements
 
 ### 1. Rate Limiting
-- **Login Attempts**: Limited to 5 attempts per 15 minutes per IP
+- **Login Attempts**: No IP-based lock (per product requirement)
 - **OTP Requests**: Limited to 3 requests per 15 minutes per IP
 - **Password Reset**: Limited to 3 attempts per hour per IP
 - **General API**: Limited to 100 requests per 15 minutes per IP
@@ -16,14 +16,8 @@ This document outlines the security enhancements implemented in the Apartment Ma
 - `backend/index.js`
 
 ### 2. Account Lockout Protection
-- Accounts are locked after 5 failed login attempts
-- Lock duration: 2 hours
-- Failed attempts are tracked per user
-- Automatic unlock after lock period expires
-
-**Files Modified:**
-- `backend/models/User.js` (added lockout fields and methods)
-- `backend/controllers/authController.js` (implemented lockout logic)
+- **Removed** per product requirement (no 15-minute IP lock or account lockout).
+- User model may still have lockout fields; they are no longer enforced on login.
 
 ### 3. Enhanced Password Security
 - **Minimum Length**: Increased from 6 to 8 characters
@@ -103,7 +97,7 @@ This document outlines the security enhancements implemented in the Apartment Ma
 
 ## ⚠️ Important Notes
 
-1. **Account Lockout**: Users will be locked out for 2 hours after 5 failed login attempts. They can contact an administrator to unlock their account if needed.
+1. **Account Lockout**: Disabled. No lockout is applied after failed login attempts.
 
 2. **Password Requirements**: All new passwords must be at least 8 characters and contain at least one letter and one number.
 
@@ -124,10 +118,9 @@ This document outlines the security enhancements implemented in the Apartment Ma
 ## 📝 Testing Checklist
 
 - [ ] Test login with correct credentials
-- [ ] Test login with incorrect credentials (verify lockout after 5 attempts)
-- [ ] Test rate limiting (try more than 5 login attempts quickly)
+- [ ] Test login with incorrect credentials
+- [ ] Test security/staff login (Security, Admin, Manager)
 - [ ] Test password reset flow
 - [ ] Test OTP rate limiting
 - [ ] Verify password validation (try weak passwords)
 - [ ] Verify email validation
-- [ ] Test account lockout unlock after 2 hours

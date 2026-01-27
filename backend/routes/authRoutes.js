@@ -20,7 +20,7 @@ const {
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { uploadToCloudinary } = require('../middleware/upload');
-const { loginLimiter, otpLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
+const { otpLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 // Configure multer for memory storage (to upload to Cloudinary)
 const storage = multer.memoryStorage();
@@ -60,7 +60,7 @@ router.post('/register-admin', registerAdmin);
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', loginLimiter, loginUser);
+router.post('/login', loginUser);
 
 // @route   POST /api/auth/send-otp
 // @desc    Send OTP for email verification

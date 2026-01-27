@@ -226,58 +226,18 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Check if account is locked
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
-      return res.status(423).json({
-        error: `Account temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minute(s).`,
-      });
-    }
-
     // Verify password
     const isPasswordMatch = await user.comparePassword(password);
 
     if (!isPasswordMatch) {
-      // Increment failed login attempts
-      if (user.incLoginAttempts) {
-        await user.incLoginAttempts();
-      } else {
-        // Fallback for models without lockout (Admin, Manager, Security)
-        const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-        if (failedAttempts >= 5) {
-          await Model.updateOne(
-            { _id: user._id },
-            {
-              $set: {
-                failedLoginAttempts: failedAttempts,
-                lockUntil: Date.now() + 2 * 60 * 60 * 1000, // 2 hours
-              },
-            }
-          );
-        } else {
-          await Model.updateOne(
-            { _id: user._id },
-            { $inc: { failedLoginAttempts: 1 } }
-          );
-        }
-      }
-      
       return res.status(401).json({
         error: 'Invalid email or password',
       });
     }
 
-    // Reset failed login attempts on successful login
+    // Reset failed login attempts on successful login (for User model that has lockout fields)
     if (user.resetLoginAttempts) {
       await user.resetLoginAttempts();
-    } else {
-      await Model.updateOne(
-        { _id: user._id },
-        {
-          $set: { failedLoginAttempts: 0 },
-          $unset: { lockUntil: 1 },
-        }
-      );
     }
 
     // Check if user is active
