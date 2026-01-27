@@ -310,10 +310,6 @@ class _AmenitiesTabState extends State<AmenitiesTab> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addAmenity,
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
