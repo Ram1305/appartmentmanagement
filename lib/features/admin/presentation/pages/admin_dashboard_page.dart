@@ -8,7 +8,7 @@ import 'tabs/blocks_tab.dart';
 import 'tabs/managers_tab.dart';
 import 'tabs/security_tab.dart';
 import 'tabs/users_tab.dart';
-import 'tabs/maintenance_tab.dart';
+import 'tabs/assign_payments_tab.dart';
 import 'tabs/payments_tab.dart';
 import 'tabs/notices_tab.dart';
 import 'tabs/ads_tab.dart';
@@ -76,7 +76,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
             Tab(icon: Icon(Icons.people), text: 'Managers'),
             Tab(icon: Icon(Icons.security), text: 'Security'),
             Tab(icon: Icon(Icons.person), text: 'Users'),
-            Tab(icon: Icon(Icons.account_balance_wallet), text: 'Maintenance'),
+            Tab(icon: Icon(Icons.account_balance_wallet), text: 'Assign Payments'),
             Tab(icon: Icon(Icons.payment), text: 'Payments'),
             Tab(icon: Icon(Icons.notifications), text: 'Notices'),
             Tab(icon: Icon(Icons.campaign), text: 'Ads'),
@@ -109,7 +109,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 ManagersTab(state: state),
                 SecurityTab(state: state),
                 UsersTab(state: state),
-                MaintenanceTab(state: state),
+                AssignPaymentsTab(state: state),
                 PaymentsTab(state: state),
                 NoticesTab(state: state),
                 AdsTab(state: state),
@@ -148,7 +148,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                   ManagersTab(state: _lastLoadedState!),
                   SecurityTab(state: _lastLoadedState!),
                   UsersTab(state: _lastLoadedState!),
-                  MaintenanceTab(state: _lastLoadedState!),
+                  AssignPaymentsTab(state: _lastLoadedState!),
                   PaymentsTab(state: _lastLoadedState!),
                   NoticesTab(state: _lastLoadedState!),
                   AdsTab(state: _lastLoadedState!),

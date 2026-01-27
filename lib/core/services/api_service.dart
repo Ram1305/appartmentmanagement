@@ -1717,6 +1717,151 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getMyPayments({
+    String? month,
+    int? year,
+    String? status,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (month != null) queryParams['month'] = month;
+      if (year != null) queryParams['year'] = year;
+      if (status != null) queryParams['status'] = status;
+      final response = await _dio.get(
+        ApiConfig.getMyPayments,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'payments': response.data['payments'],
+          'count': response.data['count'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get payments',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getPaymentById(String id) async {
+    try {
+      final response = await _dio.get(ApiConfig.getPaymentByIdUrl(id));
+      if (response.statusCode == 200) {
+        return {'success': true, 'payment': response.data['payment']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get payment',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> assignPayment({
+    required String userId,
+    required String month,
+    required int year,
+    required List<Map<String, dynamic>> lineItems,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.assignPayment,
+        data: {
+          'userId': userId,
+          'month': month,
+          'year': year,
+          'lineItems': lineItems,
+        },
+      );
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Payment assigned',
+          'payment': response.data['payment'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to assign payment',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createRazorpayOrder(String paymentId) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.createRazorpayOrder,
+        data: {'paymentId': paymentId},
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'orderId': response.data['orderId'],
+          'amount': response.data['amount'],
+          'currency': response.data['currency'] ?? 'INR',
+          'keyId': response.data['keyId'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to create order',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> completePayment(
+    String paymentId, {
+    String? transactionId,
+    String paymentMethod = 'online',
+  }) async {
+    try {
+      final response = await _dio.patch(
+        ApiConfig.completePaymentUrl(paymentId),
+        data: {
+          if (transactionId != null) 'transactionId': transactionId,
+          'paymentMethod': paymentMethod,
+        },
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'],
+          'payment': response.data['payment'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to complete payment',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // Get all notices
   Future<Map<String, dynamic>> getAllNotices({
     String? type,

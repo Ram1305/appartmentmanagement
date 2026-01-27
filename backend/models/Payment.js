@@ -1,5 +1,31 @@
 const mongoose = require('mongoose');
 
+const LINE_ITEM_TYPES = [
+  'Maintenance',
+  'Rent',
+  'Parking',
+  'Amenities usage',
+  'Penalty',
+  'Electricity',
+  'Water',
+];
+
+const lineItemSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+      enum: LINE_ITEM_TYPES,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: false }
+);
+
 const paymentSchema = new mongoose.Schema(
   {
     userId: {
@@ -9,7 +35,15 @@ const paymentSchema = new mongoose.Schema(
     },
     amount: {
       type: Number,
-      required: true,
+      default: 0,
+    },
+    lineItems: {
+      type: [lineItemSchema],
+      default: [],
+    },
+    totalAmount: {
+      type: Number,
+      default: 0,
     },
     month: {
       type: String,
@@ -32,6 +66,9 @@ const paymentSchema = new mongoose.Schema(
       enum: ['cash', 'online', 'cheque', 'other'],
     },
     transactionId: {
+      type: String,
+    },
+    razorpayOrderId: {
       type: String,
     },
     notes: {
@@ -58,4 +95,4 @@ paymentSchema.set('toJSON', {
 });
 
 module.exports = mongoose.model('Payment', paymentSchema);
-
+module.exports.LINE_ITEM_TYPES = LINE_ITEM_TYPES;

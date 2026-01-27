@@ -68,7 +68,12 @@ class ApiConfig {
   static String get paymentsBase => '$baseUrl/payments';
   static String get getAllPayments => paymentsBase;
   static String get getPaymentStats => '$paymentsBase/stats';
+  static String get getMyPayments => '$paymentsBase/my';
   static String get recordPayment => paymentsBase;
+  static String get assignPayment => paymentsBase;
+  static String get createRazorpayOrder => '$paymentsBase/create-order';
+  static String getPaymentByIdUrl(String id) => '$paymentsBase/$id';
+  static String completePaymentUrl(String id) => '$paymentsBase/$id/complete';
 
   // Notice endpoints
   static String get noticesBase => '$baseUrl/notices';

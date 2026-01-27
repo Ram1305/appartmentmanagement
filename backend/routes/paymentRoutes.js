@@ -2,24 +2,35 @@ const express = require('express');
 const router = express.Router();
 const {
   getAllPayments,
+  getPaymentsByUser,
+  getPaymentById,
   getPaymentStats,
+  assignPayment,
+  createRazorpayOrder,
+  completePayment,
   recordPayment,
 } = require('../controllers/paymentController');
+const { protect } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/requireAdmin');
 
-// @route   GET /api/payments
-// @desc    Get all payments
-// @access  Public
-router.get('/', getAllPayments);
+// Must be before /:id
+router.get('/my', protect, getPaymentsByUser);
+router.get('/stats', protect, requireAdmin, getPaymentStats);
+router.post('/create-order', protect, createRazorpayOrder);
 
-// @route   GET /api/payments/stats
-// @desc    Get payment statistics
-// @access  Public
-router.get('/stats', getPaymentStats);
+// Admin: list all payments
+router.get('/', protect, requireAdmin, getAllPayments);
 
-// @route   POST /api/payments
-// @desc    Record payment
-// @access  Public
-router.post('/', recordPayment);
+// Assign payment (admin)
+router.post('/', protect, requireAdmin, assignPayment);
+
+// Manual record (admin)
+router.post('/record', protect, requireAdmin, recordPayment);
+
+// Get one payment (owner or admin)
+router.get('/:id', protect, getPaymentById);
+
+// Complete payment after Razorpay (user)
+router.patch('/:id/complete', protect, completePayment);
 
 module.exports = router;
-

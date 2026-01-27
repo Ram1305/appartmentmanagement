@@ -230,7 +230,7 @@ class _HomeTabState extends State<HomeTab> {
     const options = [
       _QuickOption('Home', Icons.home_rounded, _Action.home),
       _QuickOption('Complaints', Icons.report_problem_rounded, _Action.complaints),
-      _QuickOption('Payments', Icons.payment_rounded, _Action.comingSoon),
+      _QuickOption('Payments', Icons.payment_rounded, _Action.payments),
       _QuickOption('Helpdesk', Icons.help_rounded, _Action.comingSoon),
       _QuickOption('Amenities', Icons.spa_rounded, _Action.amenities),
       _QuickOption('Security', Icons.security_rounded, _Action.securityList),
@@ -314,6 +314,9 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.amenities:
         Navigator.pushNamed(context, AppRoutes.amenities);
         break;
+      case _Action.payments:
+        Navigator.pushNamed(context, AppRoutes.payments);
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -321,7 +324,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, comingSoon }
 
 class _QuickOption {
   final String title;
