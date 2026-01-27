@@ -21,8 +21,8 @@ router.post('/create-order', protect, createRazorpayOrder);
 // Admin: list all payments
 router.get('/', protect, requireAdmin, getAllPayments);
 
-// Assign payment (admin)
-router.post('/', protect, requireAdmin, assignPayment);
+// Assign payment (any authenticated user, e.g. admin/manager from dashboard)
+router.post('/', protect, assignPayment);
 
 // Manual record (admin)
 router.post('/record', protect, requireAdmin, recordPayment);

@@ -1774,6 +1774,7 @@ class ApiService {
     required int year,
     required List<Map<String, dynamic>> lineItems,
   }) async {
+    const fallbackError = 'Failed to assign payment';
     try {
       final response = await _dio.post(
         ApiConfig.assignPayment,
@@ -1791,15 +1792,19 @@ class ApiService {
           'payment': response.data['payment'],
         };
       }
-      return {
-        'success': false,
-        'error': response.data['error'] ?? 'Failed to assign payment',
-      };
+      final err = response.data['error'] ?? response.data['message'];
+      final msg = (err is String && err.trim().isNotEmpty) ? err : fallbackError;
+      return {'success': false, 'error': msg};
     } on DioException catch (e) {
-      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      final data = e.response?.data;
+      Object? err = data is Map ? (data['error'] ?? data['message']) : null;
+      final msg = (err is String && err.trim().isNotEmpty)
+          ? err
+          : (e.message?.trim().isNotEmpty == true ? e.message! : 'Network error');
       return {'success': false, 'error': msg};
     } catch (e) {
-      return {'success': false, 'error': e.toString()};
+      final s = e.toString().replaceFirst('Exception: ', '').trim();
+      return {'success': false, 'error': s.isNotEmpty ? s : fallbackError};
     }
   }
 

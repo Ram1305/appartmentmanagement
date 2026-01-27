@@ -75,6 +75,7 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
   }
 
   void _showAddPaymentSheet() {
+    final scaffoldContext = context;
     UserModel? selectedUser;
     int selectedMonth = DateTime.now().month;
     int selectedYear = DateTime.now().year;
@@ -84,6 +85,7 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
       amounts[t] = 0;
       controllers[t] = TextEditingController();
     }
+    bool isSubmitting = false;
 
     showModalBottomSheet<void>(
       context: context,
@@ -100,11 +102,11 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            padding: const EdgeInsets.only(
               left: 24,
               right: 24,
               top: 24,
+              bottom: 24,
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -131,26 +133,34 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // User (unit) selection
-                  DropdownButtonFormField<UserModel>(
-                    decoration: InputDecoration(
-                      labelText: 'House (Block – Floor – Room)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                    ),
-                    value: selectedUser,
-                    items: _users
-                        .map((u) => DropdownMenuItem(
-                              value: u,
-                              child: Text(
-                                '${u.block ?? ""} – ${u.floor ?? ""} – ${u.roomNumber ?? ""} (${u.name})',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (v) => setModalState(() => selectedUser = v),
+                  // User (unit) selection — constrained to avoid overflow
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        child: DropdownButtonFormField<UserModel>(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'House (Block – Floor – Room)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                          ),
+                          value: selectedUser,
+                          items: _users
+                              .map((u) => DropdownMenuItem(
+                                    value: u,
+                                    child: Text(
+                                      '${u.block ?? ""} – ${u.floor ?? ""} – ${u.roomNumber ?? ""} (${u.name})',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setModalState(() => selectedUser = v),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -285,12 +295,7 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {
-                            for (final c in controllers.values) {
-                              c.dispose();
-                            }
-                            Navigator.pop(ctx);
-                          },
+                          onPressed: () => Navigator.pop(ctx),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -304,7 +309,9 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
-                          onPressed: () async {
+                          onPressed: isSubmitting
+                              ? null
+                              : () async {
                             if (selectedUser == null) {
                               ScaffoldMessenger.of(ctx).showSnackBar(
                                 const SnackBar(
@@ -343,32 +350,50 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
                               );
                               return;
                             }
-                            for (final c in controllers.values) {
-                              c.dispose();
-                            }
-                            Navigator.pop(ctx);
-                            final res = await _api.assignPayment(
-                              userId: selectedUser!.id,
-                              month: _monthNames[selectedMonth - 1],
-                              year: selectedYear,
-                              lineItems: lineItems,
-                            );
-                            if (!mounted) return;
-                            if (res['success'] == true) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Payment assigned successfully'),
-                                  backgroundColor: Colors.green,
-                                ),
+                            setModalState(() => isSubmitting = true);
+                            try {
+                              final res = await _api.assignPayment(
+                                userId: selectedUser!.id,
+                                month: _monthNames[selectedMonth - 1],
+                                year: selectedYear,
+                                lineItems: lineItems,
                               );
-                              _loadPayments();
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(res['error'] ?? 'Failed'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              final success = res['success'] == true;
+                              final raw = res['error'] ?? res['message'];
+                              final message = (raw is String && raw.trim().isNotEmpty)
+                                  ? raw
+                                  : 'Failed to assign payment';
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted) return;
+                                if (success) {
+                                  _loadPayments();
+                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Payment assigned successfully'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                                    SnackBar(
+                                      content: Text(message),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              });
+                            } catch (e) {
+                              setModalState(() => isSubmitting = false);
+                              if (ctx.mounted) {
+                                final err = e.toString().replaceFirst('Exception: ', '').trim();
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  SnackBar(
+                                    content: Text(err.isNotEmpty ? err : 'Failed to assign payment'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -379,7 +404,16 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Add payment'),
+                          child: isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text('Add payment'),
                         ),
                       ),
                     ],
@@ -391,7 +425,11 @@ class _AssignPaymentsTabState extends State<AssignPaymentsTab> {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      for (final c in controllers.values) {
+        c.dispose();
+      }
+    });
   }
 
   @override
