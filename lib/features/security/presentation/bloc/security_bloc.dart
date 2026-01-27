@@ -42,6 +42,15 @@ class AddVisitorEvent extends SecurityEvent {
   List<Object?> get props => [name, mobileNumber, type, block, homeNumber, image, purposeOfVisit, vehicleNumber];
 }
 
+class ApproveVisitorEvent extends SecurityEvent {
+  final String visitorId;
+
+  const ApproveVisitorEvent({required this.visitorId});
+
+  @override
+  List<Object?> get props => [visitorId];
+}
+
 // States
 abstract class SecurityState extends Equatable {
   const SecurityState();
@@ -75,6 +84,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
   SecurityBloc() : super(SecurityInitial()) {
     on<LoadSecurityDataEvent>(_onLoadSecurityData);
     on<AddVisitorEvent>(_onAddVisitor);
+    on<ApproveVisitorEvent>(_onApproveVisitor);
   }
 
   Future<void> _onLoadSecurityData(
@@ -108,6 +118,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
             homeNumber: '${(i % 10) + 1}',
             visitTime: DateTime.now().subtract(Duration(hours: i)),
             otp: _generateOTP(),
+            approvalStatus: i % 3 == 0 ? VisitorApprovalStatus.approved : VisitorApprovalStatus.pending,
           );
           visitors.add(visitor);
         }
@@ -146,7 +157,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         id: visitorId,
         name: event.name,
         mobileNumber: event.mobileNumber,
-        category: VisitorCategory.outsider, // Security adds outsiders by default
+        category: VisitorCategory.outsider,
         type: event.type,
         block: event.block,
         homeNumber: event.homeNumber,
@@ -156,11 +167,30 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         image: event.image,
         reasonForVisit: event.purposeOfVisit,
         vehicleNumber: event.vehicleNumber,
+        approvalStatus: VisitorApprovalStatus.pending,
       );
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final blocks = await _getBlocks();
       emit(SecurityLoaded(visitors: visitors, blocks: blocks));
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  Future<void> _onApproveVisitor(
+    ApproveVisitorEvent event,
+    Emitter<SecurityState> emit,
+  ) async {
+    final current = state;
+    if (current is! SecurityLoaded) return;
+    try {
+      final visitors = List<VisitorModel>.from(current.visitors);
+      final idx = visitors.indexWhere((v) => v.id == event.visitorId);
+      if (idx < 0) return;
+      visitors[idx] = visitors[idx].copyWith(approvalStatus: VisitorApprovalStatus.approved);
+      await _saveVisitors(visitors);
+      emit(SecurityLoaded(visitors: visitors, blocks: current.blocks));
     } catch (e) {
       // Handle error
     }

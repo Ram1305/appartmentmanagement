@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:convert';
 import 'dart:io';
 import '../../../../core/app_theme.dart';
 import '../../../../core/routes/app_routes.dart';
@@ -16,7 +18,7 @@ class SecurityDashboardPage extends StatefulWidget {
   State<SecurityDashboardPage> createState() => _SecurityDashboardPageState();
 }
 
-enum _VisitorListSection { today, upcoming, viewAll }
+enum _VisitorListSection { waitingApproval, today, upcoming, viewAll }
 
 class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
   _VisitorListSection _activeSection = _VisitorListSection.viewAll;
@@ -34,6 +36,8 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
   List<VisitorModel> _filteredVisitors(SecurityLoaded state) {
     final now = DateTime.now();
     switch (_activeSection) {
+      case _VisitorListSection.waitingApproval:
+        return state.visitors.where((v) => v.approvalStatus == VisitorApprovalStatus.pending).toList();
       case _VisitorListSection.today:
         return state.visitors.where((v) => _isSameDay(v.visitTime, now)).toList();
       case _VisitorListSection.upcoming:
@@ -77,7 +81,12 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                       _GridCard(
                         icon: Icons.person_add,
                         label: 'Add Visitor',
-                        onTap: () => _showAddVisitorDialog(context, state.blocks),
+                        onTap: () => _showAddVisitorSheet(context, state.blocks),
+                      ),
+                      _GridCard(
+                        icon: Icons.pending_actions,
+                        label: 'Waiting for Approval',
+                        onTap: () => _showWaitingForApprovalSheet(context, state.visitors),
                       ),
                       _GridCard(
                         icon: Icons.today,
@@ -88,8 +97,7 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                       _GridCard(
                         icon: Icons.upcoming,
                         label: 'Upcoming Visitors',
-                        onTap: () => setState(() => _activeSection = _VisitorListSection.upcoming),
-                        isSelected: _activeSection == _VisitorListSection.upcoming,
+                        onTap: () => _showUpcomingVisitorsSheet(context, state.visitors),
                       ),
                       _GridCard(
                         icon: Icons.visibility,
@@ -100,7 +108,7 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                       _GridCard(
                         icon: Icons.verified_user,
                         label: 'Verify Visitor',
-                        onTap: () => _showVerifyVisitorDialog(context, state.visitors),
+                        onTap: () => _showVerifyVisitorSheet(context, state.visitors),
                       ),
                     ],
                   ),
@@ -148,11 +156,13 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                _activeSection == _VisitorListSection.today
-                                    ? 'No visitors today'
-                                    : _activeSection == _VisitorListSection.upcoming
-                                        ? 'No upcoming visitors'
-                                        : 'No visitors registered',
+                                _activeSection == _VisitorListSection.waitingApproval
+                                    ? 'No visitors waiting for approval'
+                                    : _activeSection == _VisitorListSection.today
+                                        ? 'No visitors today'
+                                        : _activeSection == _VisitorListSection.upcoming
+                                            ? 'No upcoming visitors'
+                                            : 'No visitors registered',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: AppTheme.textColor.withOpacity(0.6),
@@ -329,6 +339,17 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                                         color: AppTheme.textColor.withOpacity(0.6),
                                       ),
                                     ),
+                                    if (visitor.approvalStatus == VisitorApprovalStatus.pending) ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.accentColor.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text('PENDING', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.accentColor)),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -345,17 +366,73 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
     );
   }
 
-  void _showAddVisitorDialog(BuildContext context, List<BlockModel> blocks) {
-    showDialog(
+  void _showAddVisitorSheet(BuildContext context, List<BlockModel> blocks) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => _AddVisitorDialog(blocks: blocks),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.92,
+        minChildSize: 0.5,
+        maxChildSize: 0.98,
+        expand: false,
+        builder: (context, scrollController) => _AddVisitorSheet(
+          blocks: blocks,
+          scrollController: scrollController,
+        ),
+      ),
     );
   }
 
-  void _showVerifyVisitorDialog(BuildContext context, List<VisitorModel> visitors) {
-    showDialog(
+  void _showWaitingForApprovalSheet(BuildContext context, List<VisitorModel> visitors) {
+    final pending = visitors.where((v) => v.approvalStatus == VisitorApprovalStatus.pending).toList();
+    showModalBottomSheet(
       context: context,
-      builder: (context) => _VerifyVisitorDialog(visitors: visitors),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) => _WaitingForApprovalSheet(
+          visitors: pending,
+          scrollController: scrollController,
+        ),
+      ),
+    );
+  }
+
+  void _showUpcomingVisitorsSheet(BuildContext context, List<VisitorModel> visitors) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollController) => _UpcomingVisitorsSheet(
+          visitors: visitors.where((v) => v.visitTime.isAfter(DateTime.now())).toList(),
+          scrollController: scrollController,
+        ),
+      ),
+    );
+  }
+
+  void _showVerifyVisitorSheet(BuildContext context, List<VisitorModel> visitors) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.35,
+        maxChildSize: 0.9,
+        builder: (ctx, scrollController) => _VerifyVisitorSheet(
+          visitors: visitors,
+          scrollController: scrollController,
+        ),
+      ),
     );
   }
 }
@@ -414,33 +491,275 @@ class _GridCard extends StatelessWidget {
   }
 }
 
-class _VerifyVisitorDialog extends StatefulWidget {
+// ————— Bottom sheet: Waiting for Approval —————
+class _WaitingForApprovalSheet extends StatelessWidget {
   final List<VisitorModel> visitors;
+  final ScrollController scrollController;
 
-  const _VerifyVisitorDialog({required this.visitors});
+  const _WaitingForApprovalSheet({
+    required this.visitors,
+    required this.scrollController,
+  });
 
   @override
-  State<_VerifyVisitorDialog> createState() => _VerifyVisitorDialogState();
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, -4))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Visitors Waiting for Approval', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)), style: IconButton.styleFrom(backgroundColor: AppTheme.dividerColor)),
+              ],
+            ),
+          ),
+          Flexible(
+            child: visitors.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_outline, size: 64, color: AppTheme.secondaryColor.withOpacity(0.6)),
+                        const SizedBox(height: 16),
+                        Text('No visitors waiting for approval', style: TextStyle(fontSize: 16, color: AppTheme.textColor.withOpacity(0.6))),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    itemCount: visitors.length,
+                    itemBuilder: (context, index) {
+                      final v = visitors[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.08), AppTheme.secondaryColor.withOpacity(0.05)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(radius: 28, backgroundColor: AppTheme.primaryColor.withOpacity(0.2), child: v.image != null ? ClipOval(child: Image.network(v.image!, fit: BoxFit.cover, width: 56, height: 56, errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white))) : const Icon(Icons.person, color: Colors.white)),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(v.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                                  const SizedBox(height: 4),
+                                  Text('Block ${v.block} • Room ${v.homeNumber}', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.7))),
+                                  Text('${v.visitTime.day}/${v.visitTime.month}/${v.visitTime.year}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.6))),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                context.read<SecurityBloc>().add(ApproveVisitorEvent(visitorId: v.id));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${v.name} approved'), backgroundColor: AppTheme.secondaryColor));
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.check_circle, size: 20),
+                              label: const Text('Approve'),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _VerifyVisitorDialogState extends State<_VerifyVisitorDialog> {
-  final _visitorIdController = TextEditingController();
+// ————— Bottom sheet: Upcoming Visitors with date picker —————
+class _UpcomingVisitorsSheet extends StatefulWidget {
+  final List<VisitorModel> visitors;
+  final ScrollController scrollController;
+
+  const _UpcomingVisitorsSheet({required this.visitors, required this.scrollController});
+
+  @override
+  State<_UpcomingVisitorsSheet> createState() => _UpcomingVisitorsSheetState();
+}
+
+class _UpcomingVisitorsSheetState extends State<_UpcomingVisitorsSheet> {
+  DateTime _selectedDate = DateTime.now();
+
+  static bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  List<VisitorModel> get _forDate => widget.visitors.where((v) => _isSameDay(v.visitTime, _selectedDate)).toList();
+
+  @override
+  Widget build(BuildContext context) {
+    final forDate = _forDate;
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, -4))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Upcoming Visitors', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)), style: IconButton.styleFrom(backgroundColor: AppTheme.dividerColor)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate.isBefore(DateTime.now()) ? DateTime.now() : _selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) setState(() => _selectedDate = picked);
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.12), AppTheme.secondaryColor.withOpacity(0.06)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Select date', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.6), fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 2),
+                          Text('${_selectedDate.day} / ${_selectedDate.month} / ${_selectedDate.year}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.textColor)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: AppTheme.textColor.withOpacity(0.5)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.people_outline, size: 20, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                Text('${forDate.length} visitor${forDate.length == 1 ? "" : "s"} on this date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Flexible(
+            child: forDate.isEmpty
+                ? Center(child: Text('No visitors on selected date', style: TextStyle(fontSize: 15, color: AppTheme.textColor.withOpacity(0.6))))
+                : ListView.builder(
+                    controller: widget.scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    itemCount: forDate.length,
+                    itemBuilder: (context, index) {
+                      final v = forDate[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(radius: 24, backgroundColor: AppTheme.primaryColor.withOpacity(0.2), child: const Icon(Icons.person, color: Colors.white)),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(v.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                                  Text('Block ${v.block} • Room ${v.homeNumber}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.7))),
+                                  Text('${v.visitTime.hour.toString().padLeft(2, '0')}:${v.visitTime.minute.toString().padLeft(2, '0')}', style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.6))),
+                                ],
+                              ),
+                            ),
+                            if (v.approvalStatus == VisitorApprovalStatus.pending)
+                              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppTheme.accentColor.withOpacity(0.2), borderRadius: BorderRadius.circular(8)), child: Text('PENDING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentColor))),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ————— Bottom sheet: Verify Visitor (OTP or Scan QR) —————
+class _VerifyVisitorSheet extends StatefulWidget {
+  final List<VisitorModel> visitors;
+  final ScrollController scrollController;
+
+  const _VerifyVisitorSheet({required this.visitors, required this.scrollController});
+
+  @override
+  State<_VerifyVisitorSheet> createState() => _VerifyVisitorSheetState();
+}
+
+class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
   final _otpController = TextEditingController();
+  final _visitorIdController = TextEditingController();
+  String? _message;
+  bool _success = false;
+  bool _showScanner = false;
 
   @override
   void dispose() {
-    _visitorIdController.dispose();
     _otpController.dispose();
+    _visitorIdController.dispose();
     super.dispose();
   }
 
-  void _verify() {
+  void _verifyOtp() {
     final id = _visitorIdController.text.trim();
     final otp = _otpController.text.trim();
     if (id.isEmpty || otp.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter visitor ID and OTP')),
-      );
+      setState(() { _message = 'Enter visitor ID and OTP'; _success = false; });
       return;
     }
     VisitorModel? visitor;
@@ -448,72 +767,205 @@ class _VerifyVisitorDialogState extends State<_VerifyVisitorDialog> {
       if (v.id == id) { visitor = v; break; }
     }
     if (visitor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Visitor not found')),
-      );
+      setState(() { _message = 'Visitor not found'; _success = false; });
       return;
     }
     if (visitor.otp != otp) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid OTP')),
-      );
+      setState(() { _message = 'Invalid OTP'; _success = false; });
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Verified: ${visitor.name}')),
-    );
-    Navigator.pop(context);
+    setState(() { _message = 'Verified: ${visitor.name}'; _success = true; });
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  void _onQrDetected(BarcodeCapture capture) {
+    if (_message != null) return;
+    final list = capture.barcodes;
+    if (list.isEmpty) return;
+    final code = list.first.rawValue;
+    if (code == null || code.isEmpty) return;
+    try {
+      final map = jsonDecode(code) as Map<String, dynamic>;
+      final visitorId = map['visitorId'] as String?;
+      final otp = map['otp'] as String?;
+      if (visitorId == null || otp == null) {
+        setState(() { _message = 'Invalid QR code'; _success = false; });
+        return;
+      }
+      VisitorModel? visitor;
+      for (final v in widget.visitors) {
+        if (v.id == visitorId) { visitor = v; break; }
+      }
+      if (visitor == null || visitor.otp != otp) {
+        setState(() { _message = 'Visitor not found or OTP mismatch'; _success = false; });
+        return;
+      }
+      setState(() { _message = 'Verified: ${visitor.name}'; _success = true; _showScanner = false; });
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) Navigator.pop(context);
+      });
+    } catch (_) {
+      setState(() { _message = 'Invalid QR code'; _success = false; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Verify Visitor'),
-      content: Column(
+    if (_showScanner) {
+      return Container(
+        decoration: BoxDecoration(color: Colors.black, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Scan visitor QR code', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: () => setState(() => _showScanner = false), icon: const Icon(Icons.close, color: Colors.white)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: MobileScanner(
+                  onDetect: _onQrDetected,
+                ),
+              ),
+            ),
+            if (_message != null) Padding(padding: const EdgeInsets.all(16), child: Text(_message!, style: TextStyle(color: _success ? AppTheme.secondaryColor : AppTheme.errorColor, fontSize: 16, fontWeight: FontWeight.w600))),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          ],
+        ),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, -4))],
+      ),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: _visitorIdController,
-            decoration: const InputDecoration(
-              labelText: 'Visitor ID',
-              hintText: 'Enter visitor ID or scan QR',
-              prefixIcon: Icon(Icons.badge),
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Verify Visitor', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)), style: IconButton.styleFrom(backgroundColor: AppTheme.dividerColor)),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _otpController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'OTP',
-              hintText: '6-digit OTP',
-              prefixIcon: Icon(Icons.lock),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _showScanner = true),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.secondaryColor.withOpacity(0.08)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor, size: 32)),
+                        const SizedBox(width: 16),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Scan QR code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textColor)), const SizedBox(height: 4), Text('Open camera to scan visitor\'s QR', style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.6)))])),
+                        Icon(Icons.chevron_right, color: AppTheme.textColor.withOpacity(0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Or verify with OTP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textColor.withOpacity(0.7))),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _visitorIdController,
+                  decoration: InputDecoration(
+                    labelText: 'Visitor ID',
+                    hintText: 'Enter visitor ID',
+                    prefixIcon: Icon(Icons.badge_outlined, color: AppTheme.primaryColor),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  decoration: InputDecoration(
+                    labelText: 'OTP',
+                    hintText: '6-digit OTP',
+                    prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_message != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_message!, style: TextStyle(color: _success ? AppTheme.secondaryColor : AppTheme.errorColor, fontSize: 14, fontWeight: FontWeight.w500))),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _verifyOtp,
+                    icon: const Icon(Icons.verified_user, size: 22),
+                    label: const Text('Verify OTP'),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  ),
+                ),
+              ],
             ),
-            maxLength: 6,
           ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _verify,
-          child: const Text('Verify'),
-        ),
-      ],
     );
   }
 }
 
-class _AddVisitorDialog extends StatefulWidget {
-  final List<BlockModel> blocks;
+/// Icons for each visitor type (index matches VisitorType order: cabTaxi..emergency).
+const List<IconData> _visitorTypeIcons = [
+  Icons.local_taxi,
+  Icons.family_restroom,
+  Icons.delivery_dining,
+  Icons.person,
+  Icons.cleaning_services,
+  Icons.electrical_services,
+  Icons.plumbing,
+  Icons.inventory_2,
+  Icons.build_circle_outlined,
+  Icons.badge_outlined,
+  Icons.emergency,
+];
 
-  const _AddVisitorDialog({required this.blocks});
+class _AddVisitorSheet extends StatefulWidget {
+  final List<BlockModel> blocks;
+  final ScrollController scrollController;
+
+  const _AddVisitorSheet({
+    required this.blocks,
+    required this.scrollController,
+  });
 
   @override
-  State<_AddVisitorDialog> createState() => _AddVisitorDialogState();
+  State<_AddVisitorSheet> createState() => _AddVisitorSheetState();
 }
 
 class _RoomOption {
@@ -523,12 +975,13 @@ class _RoomOption {
   String get label => 'Floor ${floor.number} – ${room.number}';
 }
 
-class _AddVisitorDialogState extends State<_AddVisitorDialog> {
+class _AddVisitorSheetState extends State<_AddVisitorSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
   final _purposeController = TextEditingController();
   final _vehicleController = TextEditingController();
+  final _manualRoomController = TextEditingController();
 
   BlockModel? _selectedBlock;
   _RoomOption? _selectedRoomOption;
@@ -560,6 +1013,7 @@ class _AddVisitorDialogState extends State<_AddVisitorDialog> {
     _mobileController.dispose();
     _purposeController.dispose();
     _vehicleController.dispose();
+    _manualRoomController.dispose();
     super.dispose();
   }
 
@@ -572,10 +1026,16 @@ class _AddVisitorDialogState extends State<_AddVisitorDialog> {
     }
   }
 
+  String? get _resolvedHomeNumber {
+    if (_selectedRoomOption != null) return _selectedRoomOption!.room.number;
+    if (_selectedBlock != null && _blockRooms.isEmpty && _manualRoomController.text.trim().isNotEmpty) return _manualRoomController.text.trim();
+    return null;
+  }
+
   void _handleAdd() {
     if (_formKey.currentState!.validate() &&
         _selectedBlock != null &&
-        _selectedRoomOption != null &&
+        _resolvedHomeNumber != null &&
         _selectedType != null) {
       context.read<SecurityBloc>().add(
             AddVisitorEvent(
@@ -583,7 +1043,7 @@ class _AddVisitorDialogState extends State<_AddVisitorDialog> {
               mobileNumber: _mobileController.text.trim(),
               type: _selectedType!,
               block: _selectedBlock!.name,
-              homeNumber: _selectedRoomOption!.room.number,
+              homeNumber: _resolvedHomeNumber!,
               image: _visitorImage?.path,
               purposeOfVisit: _purposeController.text.trim().isEmpty ? null : _purposeController.text.trim(),
               vehicleNumber: _vehicleController.text.trim().isEmpty ? null : _vehicleController.text.trim(),
@@ -597,179 +1057,432 @@ class _AddVisitorDialogState extends State<_AddVisitorDialog> {
   Widget build(BuildContext context) {
     final entryTimeStr =
         '${_entryTime.day}/${_entryTime.month}/${_entryTime.year} ${_entryTime.hour}:${_entryTime.minute.toString().padLeft(2, '0')}';
-    return AlertDialog(
-      title: const Text('Add Visitor'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DropdownButtonFormField<BlockModel>(
-                value: _selectedBlock,
-                decoration: const InputDecoration(
-                  labelText: 'Select Block',
-                  prefixIcon: Icon(Icons.apartment),
-                ),
-                items: widget.blocks.map((block) {
-                  return DropdownMenuItem(
-                    value: block,
-                    child: Text('Block ${block.name}'),
-                  );
-                }).toList(),
-                onChanged: (block) {
-                  setState(() {
-                    _selectedBlock = block;
-                    _selectedRoomOption = null;
-                  });
-                },
-              ),
-              if (_selectedBlock != null) ...[
-                const SizedBox(height: 16),
-                DropdownButtonFormField<_RoomOption>(
-                  value: _selectedRoomOption,
-                  decoration: const InputDecoration(
-                    labelText: 'Select Room / Flat Number',
-                    prefixIcon: Icon(Icons.door_front_door),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.dividerColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Add Visitor',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textColor,
                   ),
-                  items: _blockRooms.map((opt) {
-                    return DropdownMenuItem(
-                      value: opt,
-                      child: Text(opt.label),
-                    );
-                  }).toList(),
-                  onChanged: (opt) {
-                    setState(() => _selectedRoomOption = opt);
-                  },
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: AppTheme.textColor.withOpacity(0.7)),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppTheme.dividerColor,
+                  ),
                 ),
               ],
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Visitor Name',
-                  prefixIcon: Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter visitor name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _mobileController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile Number',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter mobile number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text('Visitor Type', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 2.2,
-                ),
-                itemCount: visitorTypeDisplayNames.length,
-                itemBuilder: (context, index) {
-                  final type = VisitorType.values[index];
-                  return ChoiceChip(
-                    label: Text(
-                      visitorTypeDisplayNames[index],
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                    selected: _selectedType == type,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedType = selected ? type : null;
-                      });
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _purposeController,
-                decoration: const InputDecoration(
-                  labelText: 'Purpose of Visit (optional)',
-                  prefixIcon: Icon(Icons.edit_note),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _vehicleController,
-                decoration: const InputDecoration(
-                  labelText: 'Vehicle Number (for cab/delivery)',
-                  hintText: 'Optional',
-                  prefixIcon: Icon(Icons.directions_car),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
+            ),
+          ),
+          Flexible(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                controller: widget.scrollController,
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 children: [
-                  Icon(Icons.access_time, size: 20, color: AppTheme.textColor.withOpacity(0.7)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Entry Time (auto): $entryTimeStr',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textColor.withOpacity(0.9),
+                  _buildSectionLabel('Block & Room'),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.dividerColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: DropdownButtonFormField<BlockModel>(
+                      value: _selectedBlock,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Select Block',
+                        prefixIcon: Icon(Icons.apartment, color: AppTheme.primaryColor, size: 22),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
+                      ),
+                      hint: Text('Choose block', style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16)),
+                      items: widget.blocks.map((block) {
+                        return DropdownMenuItem(
+                          value: block,
+                          child: Text('Block ${block.name}', overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: (block) {
+                        setState(() {
+                          _selectedBlock = block;
+                          _selectedRoomOption = null;
+                        });
+                      },
                     ),
                   ),
+                  if (_selectedBlock != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.dividerColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<_RoomOption>(
+                        value: _selectedRoomOption,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Select Room / Flat',
+                          prefixIcon: Icon(Icons.door_front_door, color: AppTheme.primaryColor, size: 22),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
+                        ),
+                        hint: Text(_blockRooms.isEmpty ? 'No rooms in this block' : 'Choose room', style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16)),
+                        items: _blockRooms.map((opt) {
+                          return DropdownMenuItem(
+                            value: opt,
+                            child: Text(opt.label, overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: _blockRooms.isEmpty ? null : (opt) {
+                          setState(() => _selectedRoomOption = opt);
+                        },
+                      ),
+                    ),
+                  ],
+                  if (_selectedBlock != null && _blockRooms.isEmpty) ...[
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _manualRoomController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: _inputDecoration('Room / Flat number', Icons.door_front_door),
+                      validator: (v) {
+                        if (_blockRooms.isNotEmpty) return null;
+                        return (v == null || v.trim().isEmpty) ? 'Enter room number' : null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  _buildSectionLabel('Visitor Details'),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: _inputDecoration('Visitor Name', Icons.person_outline),
+                    validator: (v) => (v == null || v.isEmpty) ? 'Enter visitor name' : null,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _mobileController,
+                    keyboardType: TextInputType.phone,
+                    decoration: _inputDecoration('Mobile Number', Icons.phone_android),
+                    validator: (v) => (v == null || v.isEmpty) ? 'Enter mobile number' : null,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionLabel('Visitor Type'),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: visitorTypeDisplayNames.length,
+                    itemBuilder: (context, index) {
+                      final type = VisitorType.values[index];
+                      final selected = _selectedType == type;
+                      final icon = index < _visitorTypeIcons.length
+                          ? _visitorTypeIcons[index]
+                          : Icons.person;
+                      return _VisitorTypeTile(
+                        icon: icon,
+                        label: visitorTypeDisplayNames[index],
+                        selected: selected,
+                        onTap: () {
+                          setState(() {
+                            _selectedType = selected ? null : type;
+                          });
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _purposeController,
+                    decoration: _inputDecoration('Purpose of Visit (optional)', Icons.edit_note),
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _vehicleController,
+                    decoration: _inputDecoration('Vehicle No. (cab/delivery)', Icons.directions_car_outlined),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor.withOpacity(0.08),
+                          AppTheme.secondaryColor.withOpacity(0.06),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.access_time, color: AppTheme.primaryColor, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Entry Time',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textColor.withOpacity(0.6),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                entryTimeStr,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionLabel('Photo / ID (optional)'),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primaryColor.withOpacity(0.12),
+                            AppTheme.secondaryColor.withOpacity(0.08),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.4),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: _visitorImage != null
+                          ? ClipOval(
+                              child: Image.file(
+                                _visitorImage!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Icon(Icons.add_a_photo, size: 36, color: AppTheme.primaryColor.withOpacity(0.8)),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _handleAdd,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 2,
+                        shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+                      ),
+                      child: const Text('Add Visitor', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text('Photo / ID (optional)', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: AppTheme.dividerColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  child: _visitorImage != null
-                      ? ClipOval(
-                          child: Image.file(
-                            _visitorImage!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : const Icon(Icons.add_a_photo, size: 40),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: AppTheme.textColor.withOpacity(0.85),
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 22),
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.dividerColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+}
+
+class _VisitorTypeTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _VisitorTypeTile({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: selected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.18),
+                      AppTheme.secondaryColor.withOpacity(0.12),
+                    ],
+                  )
+                : null,
+            color: selected ? null : AppTheme.dividerColor.withOpacity(0.4),
+            border: Border.all(
+              color: selected ? AppTheme.primaryColor : AppTheme.dividerColor,
+              width: selected ? 2 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: selected ? AppTheme.primaryColor : AppTheme.textColor.withOpacity(0.6),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppTheme.primaryColor : AppTheme.textColor.withOpacity(0.8),
                 ),
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _handleAdd,
-          child: const Text('Add Visitor'),
-        ),
-      ],
     );
   }
 }

@@ -55,6 +55,12 @@ extension VisitorTypeX on VisitorType {
   }
 }
 
+/// Visitor approval: pending until resident/security approves; then allowed.
+enum VisitorApprovalStatus {
+  pending,
+  approved,
+}
+
 enum VisitorCategory {
   relative,
   outsider,
@@ -87,6 +93,7 @@ class VisitorModel extends Equatable {
   final String? otp;
   final String? qrCode;
   final bool isRegistered;
+  final VisitorApprovalStatus approvalStatus;
 
   const VisitorModel({
     required this.id,
@@ -104,6 +111,7 @@ class VisitorModel extends Equatable {
     this.otp,
     this.qrCode,
     this.isRegistered = false,
+    this.approvalStatus = VisitorApprovalStatus.pending,
   });
 
   Map<String, dynamic> toJson() {
@@ -123,6 +131,7 @@ class VisitorModel extends Equatable {
       'otp': otp,
       'qrCode': qrCode,
       'isRegistered': isRegistered,
+      'approvalStatus': approvalStatus.name,
     };
   }
 
@@ -162,6 +171,50 @@ class VisitorModel extends Equatable {
       otp: json['otp'] as String?,
       qrCode: json['qrCode'] as String?,
       isRegistered: json['isRegistered'] as bool? ?? false,
+      approvalStatus: json['approvalStatus'] != null
+          ? VisitorApprovalStatus.values.firstWhere(
+              (e) => e.name == json['approvalStatus'],
+              orElse: () => VisitorApprovalStatus.pending,
+            )
+          : VisitorApprovalStatus.pending,
+    );
+  }
+
+  VisitorModel copyWith({
+    String? id,
+    String? name,
+    String? mobileNumber,
+    String? image,
+    VisitorType? type,
+    VisitorCategory? category,
+    RelativeType? relativeType,
+    String? reasonForVisit,
+    String? vehicleNumber,
+    String? block,
+    String? homeNumber,
+    DateTime? visitTime,
+    String? otp,
+    String? qrCode,
+    bool? isRegistered,
+    VisitorApprovalStatus? approvalStatus,
+  }) {
+    return VisitorModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      mobileNumber: mobileNumber ?? this.mobileNumber,
+      image: image ?? this.image,
+      type: type ?? this.type,
+      category: category ?? this.category,
+      relativeType: relativeType ?? this.relativeType,
+      reasonForVisit: reasonForVisit ?? this.reasonForVisit,
+      vehicleNumber: vehicleNumber ?? this.vehicleNumber,
+      block: block ?? this.block,
+      homeNumber: homeNumber ?? this.homeNumber,
+      visitTime: visitTime ?? this.visitTime,
+      otp: otp ?? this.otp,
+      qrCode: qrCode ?? this.qrCode,
+      isRegistered: isRegistered ?? this.isRegistered,
+      approvalStatus: approvalStatus ?? this.approvalStatus,
     );
   }
 
@@ -182,6 +235,7 @@ class VisitorModel extends Equatable {
         otp,
         qrCode,
         isRegistered,
+        approvalStatus,
       ];
 }
 
