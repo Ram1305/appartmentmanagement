@@ -11,21 +11,15 @@ const {
   recordPayment,
 } = require('../controllers/paymentController');
 const { protect } = require('../middleware/auth');
-const { requireAdmin } = require('../middleware/requireAdmin');
 
 // Must be before /:id
 router.get('/my', protect, getPaymentsByUser);
-router.get('/stats', protect, requireAdmin, getPaymentStats);
+router.get('/stats', protect, getPaymentStats);
 router.post('/create-order', protect, createRazorpayOrder);
 
-// Admin: list all payments
-router.get('/', protect, requireAdmin, getAllPayments);
-
-// Assign payment (any authenticated user, e.g. admin/manager from dashboard)
+router.get('/', protect, getAllPayments);
 router.post('/', protect, assignPayment);
-
-// Manual record (admin)
-router.post('/record', protect, requireAdmin, recordPayment);
+router.post('/record', protect, recordPayment);
 
 // Get one payment (owner or admin)
 router.get('/:id', protect, getPaymentById);

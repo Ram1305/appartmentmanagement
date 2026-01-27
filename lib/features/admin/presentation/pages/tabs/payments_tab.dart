@@ -11,7 +11,18 @@ const List<String> _monthNames = [
 
 class PaymentsTab extends StatefulWidget {
   final AdminLoaded state;
-  const PaymentsTab({required this.state, super.key});
+  /// When non-null, [parentTabController] and [parentTabIndex] are used to
+  /// refresh payments when the user switches to this tab (so newly added
+  /// payments show in the Pending list).
+  final TabController? parentTabController;
+  final int? parentTabIndex;
+
+  const PaymentsTab({
+    required this.state,
+    this.parentTabController,
+    this.parentTabIndex,
+    super.key,
+  });
 
   @override
   State<PaymentsTab> createState() => _PaymentsTabState();
@@ -24,16 +35,29 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
   bool _isLoading = false;
   int? _filterMonth;
   int? _filterYear;
+  VoidCallback? _parentTabListener;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadPayments();
+    final parent = widget.parentTabController;
+    final index = widget.parentTabIndex;
+    if (parent != null && index != null) {
+      void listener() {
+        if (parent.index == index && mounted) _loadPayments();
+      }
+      _parentTabListener = listener;
+      parent.addListener(listener);
+    }
   }
 
   @override
   void dispose() {
+    if (_parentTabListener != null && widget.parentTabController != null) {
+      widget.parentTabController!.removeListener(_parentTabListener!);
+    }
     _tabController.dispose();
     super.dispose();
   }
@@ -46,15 +70,19 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
       if (_filterMonth != null) month = _monthNames[_filterMonth! - 1];
       if (_filterYear != null) year = _filterYear;
       final status = _tabController.index == 0 ? 'pending' : 'paid';
+      debugPrint('[PaymentsTab] _loadPayments: month=$month year=$year status=$status');
       final res = await _api.getAllPayments(month: month, year: year, status: status);
+      debugPrint('[PaymentsTab] _loadPayments: success=${res['success']}, payments count=${(res['payments'] as List?)?.length ?? 0}');
       if (mounted && res['success'] == true && res['payments'] != null) {
-        setState(() {
-          _payments = (res['payments'] as List)
-              .map((e) => PaymentModel.fromJson(e as Map<String, dynamic>))
-              .toList();
-        });
+        final list = (res['payments'] as List)
+            .map((e) => PaymentModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        debugPrint('[PaymentsTab] parsed ${list.length} payments: ${list.map((p) => '${p.month}/${p.year} ${p.status}').join(', ')}');
+        setState(() => _payments = list);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[PaymentsTab] _loadPayments error: $e\n$st');
+    }
     if (mounted) setState(() => _isLoading = false);
   }
 

@@ -1620,15 +1620,28 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
+        final payments = response.data['payments'];
+        final count = response.data['count'];
+        debugPrint('[getAllPayments] success=true, count=$count');
+        if (payments is List) {
+          for (var i = 0; i < payments.length; i++) {
+            final p = payments[i];
+            if (p is Map) {
+              debugPrint('  [$i] id=${p['id'] ?? p['_id']} month=${p['month']} year=${p['year']} status=${p['status']} totalAmount=${p['totalAmount']}');
+            }
+          }
+        }
         return {
           'success': true,
-          'payments': response.data['payments'],
-          'count': response.data['count'],
+          'payments': payments,
+          'count': count,
         };
       } else {
+        final err = response.data['error'] ?? 'Failed to get payments';
+        debugPrint('[getAllPayments] non-200: statusCode=${response.statusCode}, error=$err');
         return {
           'success': false,
-          'error': response.data['error'] ?? 'Failed to get payments',
+          'error': err,
         };
       }
     } on DioException catch (e) {
@@ -1650,11 +1663,13 @@ class ApiService {
         errorMessage = e.message ?? 'Network error';
       }
 
+      debugPrint('[getAllPayments] DioException: $errorMessage');
       return {
         'success': false,
         'error': errorMessage,
       };
     } catch (e) {
+      debugPrint('[getAllPayments] catch: $e');
       return {
         'success': false,
         'error': e.toString(),
