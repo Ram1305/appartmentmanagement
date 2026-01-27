@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -230,10 +231,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       debugPrint('Calling authRepository.login...');
-      final user = await authRepository.login(
-        event.email,
-        event.password,
-        event.userType,
+      final user = await authRepository
+          .login(event.email, event.password, event.userType)
+          .timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException(
+            'Connection timeout. Please check your internet and try again.',
+          );
+        },
       );
       debugPrint('AuthRepository returned user: ${user != null}');
       if (user != null) {
@@ -248,11 +254,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         debugPrint('User is null, emitting error');
         emit(const AuthError(message: 'Invalid email or password'));
       }
+    } on TimeoutException catch (e) {
+      debugPrint('=== AUTH BLOC TIMEOUT ===');
+      emit(AuthError(message: e.message ?? 'Connection timeout. Please try again.'));
     } catch (e) {
       debugPrint('=== AUTH BLOC ERROR ===');
       debugPrint('Error: $e');
-      emit(AuthError(message: e.toString()));
+      final message = e is Exception ? _readableMessage(e) : e.toString();
+      emit(AuthError(message: message));
     }
+  }
+
+  /// Prefer a short, user-friendly message from API/Exception.
+  String _readableMessage(Exception e) {
+    final s = e.toString();
+    if (s.startsWith('Exception: ')) {
+      return s.substring('Exception: '.length);
+    }
+    return s;
   }
 
   Future<void> _onRegisterUser(

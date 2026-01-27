@@ -232,9 +232,13 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           } else if (state is AuthLoading) {
-            print('Loading...');
             setState(() {
               _isLoading = true;
+            });
+          } else {
+            // AuthInitial or any other state: stop loading so button never sticks
+            setState(() {
+              _isLoading = false;
             });
           }
         },
