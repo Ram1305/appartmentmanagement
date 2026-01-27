@@ -309,7 +309,7 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
                             return DropdownMenuItem<VisitorType>(
                               value: type,
                               child: Text(
-                                type.name.toUpperCase(),
+                                type.displayName,
                                 style: const TextStyle(color: Colors.black),
                               ),
                             );

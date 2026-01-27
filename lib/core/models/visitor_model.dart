@@ -1,14 +1,58 @@
 import 'package:equatable/equatable.dart';
 
 enum VisitorType {
-  swiggy,
-  zomato,
-  zepto,
-  amazon,
-  delivery,
+  cabTaxi,
+  family,
+  deliveryBoy,
   guest,
-  service,
+  maid,
+  electrician,
+  plumber,
+  courier,
+  maintenance,
+  officialVisitor,
+  emergency,
   other,
+}
+
+/// Display labels for visitor type grid; order matches [VisitorType] excluding [VisitorType.other].
+const List<String> visitorTypeDisplayNames = [
+  'Cab / Taxi',
+  'Family',
+  'Delivery Boy',
+  'Guest',
+  'Maid',
+  'Electrician',
+  'Plumber',
+  'Courier',
+  'Maintenance',
+  'Official Visitor',
+  'Emergency',
+];
+
+extension VisitorTypeX on VisitorType {
+  String get displayName {
+    const names = visitorTypeDisplayNames;
+    final index = indexOf(this);
+    if (index >= 0 && index < names.length) return names[index];
+    return name;
+  }
+
+  static int indexOf(VisitorType type) {
+    final list = VisitorType.values.where((e) => e != VisitorType.other).toList();
+    final i = list.indexOf(type);
+    return i >= 0 ? i : -1;
+  }
+
+  static VisitorType? fromDisplayName(String displayName) {
+    final lower = displayName.trim().toLowerCase();
+    for (int i = 0; i < visitorTypeDisplayNames.length; i++) {
+      if (visitorTypeDisplayNames[i].toLowerCase() == lower) {
+        return VisitorType.values[i];
+      }
+    }
+    return null;
+  }
 }
 
 enum VisitorCategory {
@@ -36,6 +80,7 @@ class VisitorModel extends Equatable {
   final VisitorCategory category;
   final RelativeType? relativeType;
   final String? reasonForVisit;
+  final String? vehicleNumber;
   final String block;
   final String homeNumber;
   final DateTime visitTime;
@@ -52,6 +97,7 @@ class VisitorModel extends Equatable {
     required this.category,
     this.relativeType,
     this.reasonForVisit,
+    this.vehicleNumber,
     required this.block,
     required this.homeNumber,
     required this.visitTime,
@@ -70,6 +116,7 @@ class VisitorModel extends Equatable {
       'category': category.name,
       'relativeType': relativeType?.name,
       'reasonForVisit': reasonForVisit,
+      'vehicleNumber': vehicleNumber,
       'block': block,
       'homeNumber': homeNumber,
       'visitTime': visitTime.toIso8601String(),
@@ -79,16 +126,22 @@ class VisitorModel extends Equatable {
     };
   }
 
+  static VisitorType _parseVisitorType(dynamic value) {
+    if (value == null || value is! String) return VisitorType.other;
+    final name = value.toString().trim();
+    for (final e in VisitorType.values) {
+      if (e.name == name) return e;
+    }
+    return VisitorType.other;
+  }
+
   factory VisitorModel.fromJson(Map<String, dynamic> json) {
     return VisitorModel(
       id: json['id'] as String,
       name: json['name'] as String,
       mobileNumber: json['mobileNumber'] as String,
       image: json['image'] as String?,
-      type: VisitorType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => VisitorType.other,
-      ),
+      type: _parseVisitorType(json['type']),
       category: json['category'] != null
           ? VisitorCategory.values.firstWhere(
               (e) => e.name == json['category'],
@@ -102,6 +155,7 @@ class VisitorModel extends Equatable {
             )
           : null,
       reasonForVisit: json['reasonForVisit'] as String?,
+      vehicleNumber: json['vehicleNumber'] as String?,
       block: json['block'] as String,
       homeNumber: json['homeNumber'] as String,
       visitTime: DateTime.parse(json['visitTime'] as String),
@@ -121,6 +175,7 @@ class VisitorModel extends Equatable {
         category,
         relativeType,
         reasonForVisit,
+        vehicleNumber,
         block,
         homeNumber,
         visitTime,

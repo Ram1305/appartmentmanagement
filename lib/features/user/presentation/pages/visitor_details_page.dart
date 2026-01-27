@@ -245,7 +245,7 @@ class _VisitorDetailsPageState extends State<VisitorDetailsPage> {
                   if (widget.visitor.category == VisitorCategory.outsider)
                     _buildInfoRow(
                       'Visitor Type',
-                      widget.visitor.type.name.toUpperCase(),
+                      widget.visitor.type.displayName.toUpperCase(),
                       Icons.person_outline_rounded,
                       AppTheme.secondaryColor,
                     ),

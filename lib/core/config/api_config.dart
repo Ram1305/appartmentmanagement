@@ -7,7 +7,7 @@ class ApiConfig {
   /// Local/debug server URL (used in debug builds).
   /// - Android emulator: use 10.0.2.2
   /// - Physical device: use your PC's IP (e.g. 192.168.1.100) so phone and PC are on same Wi-Fi
-  static const String _debugBaseUrl = 'http://10.0.2.2:5000/api';
+  static const String _debugBaseUrl = 'http://72.61.236.154:5000/api';
 
   /// Override at runtime: run with
   ///   flutter run --dart-define=API_BASE_URL=http://YOUR_PC_IP:5000/api
@@ -87,6 +87,16 @@ class ApiConfig {
   static String get getAds => adsBase;
   static String get createAd => adsBase;
   static String get deleteAd => adsBase; // Use with /:id
+
+  // Vehicle endpoints
+  static String get vehiclesBase => '$baseUrl/vehicles';
+  static String get getVehicles => vehiclesBase;
+  static String get addVehicle => vehiclesBase;
+
+  // Family member endpoints
+  static String get familyMembersBase => '$baseUrl/family-members';
+  static String get getFamilyMembers => familyMembersBase;
+  static String get addFamilyMember => familyMembersBase;
 
   // Health check
   static String get health => '$baseUrl/health';

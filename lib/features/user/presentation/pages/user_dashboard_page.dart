@@ -10,6 +10,7 @@ import 'widgets/events_tab.dart';
 import 'widgets/complaints_tab.dart';
 import 'widgets/profile_tab.dart';
 import 'visitors_page.dart';
+import 'vehicles_page.dart';
 import 'terms_and_conditions_page.dart';
 
 class UserDashboardPage extends StatefulWidget {
@@ -291,6 +292,21 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => VisitorsPage(user: user),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.directions_car_rounded,
+                    title: 'My Vehicles',
+                    isSecondary: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VehiclesPage(user: user),
                         ),
                       );
                     },

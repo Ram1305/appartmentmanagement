@@ -70,6 +70,8 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/notices', require('./routes/noticeRoutes'));
 app.use('/api/permissions', require('./routes/permissionRoutes'));
 app.use('/api/visitors', require('./routes/visitorRoutes'));
+app.use('/api/vehicles', require('./routes/vehicleRoutes'));
+app.use('/api/family-members', require('./routes/familyMemberRoutes'));
 app.use('/api/ads', require('./routes/adRoutes'));
 
 // Health check route

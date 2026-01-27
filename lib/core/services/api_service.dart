@@ -1925,6 +1925,230 @@ class ApiService {
     }
   }
 
+  // Get vehicles (by current user)
+  Future<Map<String, dynamic>> getVehicles() async {
+    try {
+      final response = await _dio.get(ApiConfig.getVehicles);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'vehicles': response.data['vehicles'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get vehicles',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Add vehicle
+  Future<Map<String, dynamic>> addVehicle({
+    required String vehicleType,
+    required String vehicleNumber,
+    File? image,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'vehicleType': vehicleType,
+        'vehicleNumber': vehicleNumber.trim(),
+        if (image != null)
+          'image': await MultipartFile.fromFile(
+            image.path,
+            filename: 'vehicle_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+      });
+
+      final response = await _dio.post(
+        ApiConfig.addVehicle,
+        data: formData,
+      );
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Vehicle created successfully',
+          'vehicle': response.data['vehicle'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to add vehicle',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Get family members
+  Future<Map<String, dynamic>> getFamilyMembers() async {
+    try {
+      final response = await _dio.get(ApiConfig.getFamilyMembers);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'familyMembers': response.data['familyMembers'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get family members',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Add family member
+  Future<Map<String, dynamic>> addFamilyMember({
+    required String name,
+    required String relationType,
+    String? dateOfBirth,
+    File? profileImage,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'name': name.trim(),
+        'relationType': relationType,
+        if (dateOfBirth != null && dateOfBirth.isNotEmpty) 'dateOfBirth': dateOfBirth,
+        if (profileImage != null)
+          'profileImage': await MultipartFile.fromFile(
+            profileImage.path,
+            filename: 'family_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+      });
+
+      final response = await _dio.post(
+        ApiConfig.addFamilyMember,
+        data: formData,
+      );
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Family member added successfully',
+          'familyMember': response.data['familyMember'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to add family member',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Get permissions
   Future<Map<String, dynamic>> getPermissions(String userType) async {
     try {

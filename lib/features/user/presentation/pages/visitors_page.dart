@@ -133,7 +133,7 @@ class VisitorsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Mobile: ${visitor.mobileNumber}'),
-                        Text('Type: ${visitor.type.name.toUpperCase()}'),
+                        Text('Type: ${visitor.type.displayName.toUpperCase()}'),
                         Text('Visit Time: ${_formatDateTime(visitor.visitTime)}'),
                       ],
                     ),

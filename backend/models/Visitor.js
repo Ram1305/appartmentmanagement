@@ -26,12 +26,19 @@ const visitorSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['swiggy', 'zomato', 'zepto', 'amazon', 'delivery', 'guest', 'service', 'other'],
+      enum: [
+        'cabTaxi', 'family', 'deliveryBoy', 'guest', 'maid', 'electrician', 'plumber',
+        'courier', 'maintenance', 'officialVisitor', 'emergency', 'other',
+        'swiggy', 'zomato', 'zepto', 'amazon', 'delivery', 'service',
+      ],
       required: [true, 'Visitor type is required'],
     },
     reasonForVisit: {
       type: String,
-      required: [true, 'Reason for visit is required'],
+      trim: true,
+    },
+    vehicleNumber: {
+      type: String,
       trim: true,
     },
     block: {

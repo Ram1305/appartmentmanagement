@@ -24,6 +24,8 @@ class AddVisitorEvent extends SecurityEvent {
   final String block;
   final String homeNumber;
   final String? image;
+  final String? purposeOfVisit;
+  final String? vehicleNumber;
 
   const AddVisitorEvent({
     required this.name,
@@ -32,10 +34,12 @@ class AddVisitorEvent extends SecurityEvent {
     required this.block,
     required this.homeNumber,
     this.image,
+    this.purposeOfVisit,
+    this.vehicleNumber,
   });
 
   @override
-  List<Object?> get props => [name, mobileNumber, type, block, homeNumber, image];
+  List<Object?> get props => [name, mobileNumber, type, block, homeNumber, image, purposeOfVisit, vehicleNumber];
 }
 
 // States
@@ -150,6 +154,8 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         otp: otp,
         qrCode: qrData,
         image: event.image,
+        reasonForVisit: event.purposeOfVisit,
+        vehicleNumber: event.vehicleNumber,
       );
       visitors.add(newVisitor);
       await _saveVisitors(visitors);

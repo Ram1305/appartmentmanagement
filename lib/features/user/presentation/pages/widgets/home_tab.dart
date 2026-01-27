@@ -8,6 +8,8 @@ import '../../../../../../core/routes/app_routes.dart';
 import '../../../../../../core/services/api_service.dart';
 import 'raise_complaint_dialog.dart';
 import '../visitors_page.dart';
+import '../vehicles_page.dart';
+import '../family_page.dart';
 
 class HomeTab extends StatefulWidget {
   final UserModel user;
@@ -114,6 +116,24 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  void _navigateToVehicles() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => VehiclesPage(user: widget.user),
+      ),
+    );
+  }
+
+  void _navigateToFamily() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FamilyPage(user: widget.user),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -202,9 +222,9 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Call Security', Icons.phone_rounded, _Action.comingSoon),
       _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
       _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
-      _QuickOption('My Family', Icons.family_restroom_rounded, _Action.comingSoon),
+      _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.comingSoon),
-      _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.comingSoon),
+      _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.vehicles),
       _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.comingSoon),
       _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.comingSoon),
     ];
@@ -258,6 +278,12 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.inviteGuest:
         _navigateToVisitors();
         break;
+      case _Action.vehicles:
+        _navigateToVehicles();
+        break;
+      case _Action.family:
+        _navigateToFamily();
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -265,7 +291,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, inviteGuest, comingSoon }
+enum _Action { home, complaints, raiseAlert, inviteGuest, vehicles, family, comingSoon }
 
 class _QuickOption {
   final String title;
