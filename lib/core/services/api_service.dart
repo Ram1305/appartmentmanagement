@@ -709,6 +709,55 @@ class ApiService {
     }
   }
 
+  /// Get all visitors for security dashboard. Optionally filter by [date] (yyyy-MM-dd) for today's visitors.
+  Future<Map<String, dynamic>> getSecurityVisitors({String? date}) async {
+    try {
+      final queryParams = date != null ? {'date': date} : null;
+      final response = await _dio.get(
+        ApiConfig.getSecurityVisitors,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'visitors': response.data['visitors'] ?? [],
+          'count': response.data['count'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get visitors',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Create block
   Future<Map<String, dynamic>> createBlock(String name) async {
     try {

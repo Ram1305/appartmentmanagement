@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../core/models/visitor_model.dart';
 import '../../../../core/models/block_model.dart';
+import '../../../../core/services/api_service.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
 
@@ -81,6 +82,8 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
   static const String _visitorsKey = 'visitors_list';
   static const String _blocksKey = 'blocks_list';
 
+  final ApiService _apiService = ApiService();
+
   SecurityBloc() : super(SecurityInitial()) {
     on<LoadSecurityDataEvent>(_onLoadSecurityData);
     on<AddVisitorEvent>(_onAddVisitor);
@@ -93,41 +96,43 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
   ) async {
     emit(SecurityLoading());
     try {
-      var visitors = await _getVisitors();
-      final blocks = await _getBlocks();
-      
-      // Initialize dummy visitor data if empty
-      if (visitors.isEmpty && blocks.isNotEmpty) {
-        final indianVisitorNames = [
-          'Ramesh Kumar', 'Sunita Devi', 'Manoj Singh', 'Kiran Patel', 'Lakshmi Reddy',
-          'Suresh Verma', 'Geeta Sharma', 'Rajesh Nair', 'Priya Iyer', 'Amit Joshi',
-          'Deepak Mehta', 'Anjali Desai', 'Vikram Menon', 'Sneha Malhotra', 'Rahul Kapoor',
-        ];
-        
-        final visitorTypes = VisitorType.values;
-        final blockNames = blocks.map((b) => b.name).toList();
-        
-        for (int i = 0; i < indianVisitorNames.length && i < 15; i++) {
-          final visitor = VisitorModel(
-            id: const Uuid().v4(),
-            name: indianVisitorNames[i],
-            mobileNumber: '9${(1000000000 + i).toString().substring(1)}',
-            category: VisitorCategory.outsider,
-            type: visitorTypes[i % visitorTypes.length],
-            block: blockNames[i % blockNames.length],
-            homeNumber: '${(i % 10) + 1}',
-            visitTime: DateTime.now().subtract(Duration(hours: i)),
-            otp: _generateOTP(),
-            approvalStatus: i % 3 == 0 ? VisitorApprovalStatus.approved : VisitorApprovalStatus.pending,
-          );
-          visitors.add(visitor);
-        }
-        await _saveVisitors(visitors);
+      List<VisitorModel> visitors = [];
+      List<BlockModel> blocks = [];
+
+      // Fetch all visitors from backend (dashboard filters Today / Upcoming / View All client-side)
+      final visitorsResponse = await _apiService.getSecurityVisitors();
+      if (visitorsResponse['success'] == true && visitorsResponse['visitors'] != null) {
+        final List<dynamic> list = visitorsResponse['visitors'] as List<dynamic>;
+        visitors = list
+            .map((v) => VisitorModel.fromJson(Map<String, dynamic>.from(v as Map)))
+            .toList();
       }
-      
+
+      // Fetch blocks from backend so Add Visitor block dropdown has data
+      final blocksResponse = await _apiService.getAllBlocks();
+      if (blocksResponse['success'] == true && blocksResponse['blocks'] != null) {
+        final List<dynamic> blocksList = blocksResponse['blocks'] as List<dynamic>;
+        blocks = blocksList
+            .map((b) => BlockModel.fromJson(Map<String, dynamic>.from(b as Map)))
+            .toList();
+        await _saveBlocks(blocks);
+      }
+
+      // Fallback: use cached blocks from prefs if API returned none
+      if (blocks.isEmpty) {
+        blocks = await _getBlocks();
+      }
+
       emit(SecurityLoaded(visitors: visitors, blocks: blocks));
     } catch (e) {
-      emit(SecurityLoaded(visitors: [], blocks: []));
+      // On error: try local cache for both
+      try {
+        final visitors = await _getVisitors();
+        final blocks = await _getBlocks();
+        emit(SecurityLoaded(visitors: visitors, blocks: blocks));
+      } catch (_) {
+        emit(SecurityLoaded(visitors: [], blocks: []));
+      }
     }
   }
 
@@ -227,6 +232,14 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       return blocksList.map((b) => BlockModel.fromJson(b)).toList();
     }
     return [];
+  }
+
+  Future<void> _saveBlocks(List<BlockModel> blocks) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _blocksKey,
+      jsonEncode(blocks.map((b) => b.toJson()).toList()),
+    );
   }
 }
 

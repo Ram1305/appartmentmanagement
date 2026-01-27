@@ -98,6 +98,10 @@ class ApiConfig {
   static String get getFamilyMembers => familyMembersBase;
   static String get addFamilyMember => familyMembersBase;
 
+  // Visitor endpoints (security: all visitors / today)
+  static String get visitorsBase => '$baseUrl/visitors';
+  static String get getSecurityVisitors => '$visitorsBase/all/list';
+
   // Health check
   static String get health => '$baseUrl/health';
 }

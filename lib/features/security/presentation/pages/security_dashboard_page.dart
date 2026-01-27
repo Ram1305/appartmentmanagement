@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import 'dart:io';
 import '../../../../core/app_theme.dart';
@@ -747,9 +748,158 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
   String? _message;
   bool _success = false;
   bool _showScanner = false;
+  MobileScannerController? _scannerController;
+  bool _scannerLoading = true;
+  bool _scannerPermissionGranted = false;
+  bool _scannerPermanentlyDenied = false;
+
+  /// Opens scanner UI and initializes camera for QR-only scanning.
+  Future<void> _openScanner() async {
+    setState(() {
+      _showScanner = true;
+      _message = null;
+      _scannerLoading = true;
+      _scannerPermissionGranted = false;
+      _scannerPermanentlyDenied = false;
+    });
+    await _initializeScanner();
+  }
+
+  Future<void> _initializeScanner() async {
+    if (!mounted) return;
+    try {
+      var status = await Permission.camera.status;
+      if (status.isDenied) {
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Camera permission required'),
+            content: const Text(
+              'Camera access is needed to scan visitor QR codes.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        if (shouldRequest != true) {
+          status = await Permission.camera.status;
+          if (mounted) {
+            setState(() {
+              _scannerLoading = false;
+              _scannerPermissionGranted = false;
+              _scannerPermanentlyDenied = status.isPermanentlyDenied;
+            });
+          }
+          return;
+        }
+        status = await Permission.camera.request();
+      }
+      if (!mounted) return;
+      if (status.isGranted) {
+        _scannerController = MobileScannerController(
+          formats: [BarcodeFormat.qrCode],
+        );
+        setState(() {
+          _scannerLoading = false;
+          _scannerPermissionGranted = true;
+          _scannerPermanentlyDenied = false;
+        });
+      } else {
+        setState(() {
+          _scannerLoading = false;
+          _scannerPermissionGranted = false;
+          _scannerPermanentlyDenied = status.isPermanentlyDenied;
+        });
+        if (status.isPermanentlyDenied && mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Permission required'),
+              content: const Text(
+                'Please enable camera access in app settings to scan QR codes.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    openAppSettings();
+                  },
+                  child: const Text('Open settings'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _scannerLoading = false;
+          _scannerPermissionGranted = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Camera error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (!mounted) return;
+    setState(() {
+      _scannerPermissionGranted = status.isGranted;
+      _scannerPermanentlyDenied = status.isPermanentlyDenied;
+    });
+    if (status.isGranted && _scannerController == null) {
+      _scannerController = MobileScannerController(
+        formats: [BarcodeFormat.qrCode],
+      );
+    } else if (status.isPermanentlyDenied && mounted) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Permission required'),
+          content: const Text(
+            'Please enable camera access in app settings to scan QR codes.',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              child: const Text('Open settings'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _closeScanner() {
+    _scannerController?.dispose();
+    _scannerController = null;
+    setState(() {
+      _showScanner = false;
+      _scannerLoading = true;
+      _scannerPermissionGranted = false;
+      _scannerPermanentlyDenied = false;
+    });
+  }
 
   @override
   void dispose() {
+    _scannerController?.dispose();
+    _scannerController = null;
     _otpController.dispose();
     _visitorIdController.dispose();
     super.dispose();
@@ -774,7 +924,8 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
       setState(() { _message = 'Invalid OTP'; _success = false; });
       return;
     }
-    setState(() { _message = 'Verified: ${visitor.name}'; _success = true; });
+    final name = visitor.name;
+    setState(() { _message = 'Verified: $name'; _success = true; });
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) Navigator.pop(context);
     });
@@ -802,7 +953,10 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
         setState(() { _message = 'Visitor not found or OTP mismatch'; _success = false; });
         return;
       }
-      setState(() { _message = 'Verified: ${visitor.name}'; _success = true; _showScanner = false; });
+      final name = visitor.name;
+      _scannerController?.dispose();
+      _scannerController = null;
+      setState(() { _message = 'Verified: $name'; _success = true; _showScanner = false; });
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) Navigator.pop(context);
       });
@@ -826,19 +980,89 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Scan visitor QR code', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => setState(() => _showScanner = false), icon: const Icon(Icons.close, color: Colors.white)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_scannerController != null)
+                        IconButton(
+                          icon: Icon(
+                            _scannerController!.torchEnabled ? Icons.flash_on : Icons.flash_off,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => _scannerController?.toggleTorch(),
+                        ),
+                      IconButton(onPressed: _closeScanner, icon: const Icon(Icons.close, color: Colors.white)),
+                    ],
+                  ),
                 ],
               ),
             ),
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: MobileScanner(
-                  onDetect: _onQrDetected,
-                ),
+                child: _scannerLoading
+                    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                    : _scannerPermissionGranted && _scannerController != null
+                        ? MobileScanner(
+                            controller: _scannerController,
+                            onDetect: _onQrDetected,
+                          )
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _scannerPermissionGranted
+                                        ? 'Camera could not start'
+                                        : 'Camera access is required to scan visitor QR codes.',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: _requestCameraPermission,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black87,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Grant camera permission'),
+                                  ),
+                                  if (_scannerPermanentlyDenied) ...[
+                                    const SizedBox(height: 12),
+                                    TextButton(
+                                      onPressed: openAppSettings,
+                                      child: const Text(
+                                        'Open settings',
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
               ),
             ),
-            if (_message != null) Padding(padding: const EdgeInsets.all(16), child: Text(_message!, style: TextStyle(color: _success ? AppTheme.secondaryColor : AppTheme.errorColor, fontSize: 16, fontWeight: FontWeight.w600))),
+            if (_message != null)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  _message!,
+                  style: TextStyle(
+                    color: _success ? AppTheme.secondaryColor : AppTheme.errorColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
           ],
         ),
@@ -870,7 +1094,7 @@ class _VerifyVisitorSheetState extends State<_VerifyVisitorSheet> {
             child: Column(
               children: [
                 InkWell(
-                  onTap: () => setState(() => _showScanner = true),
+                  onTap: _openScanner,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -1008,6 +1232,17 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
   }
 
   @override
+  void didUpdateWidget(covariant _AddVisitorSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When blocks list updates (e.g. from API), keep selection by id so dropdown value matches an item
+    if (_selectedBlock != null && oldWidget.blocks != widget.blocks) {
+      final matched = widget.blocks.where((b) => b.id == _selectedBlock!.id).toList();
+      _selectedBlock = matched.isNotEmpty ? matched.first : null;
+      if (_selectedBlock == null) _selectedRoomOption = null;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _mobileController.dispose();
@@ -1128,27 +1363,33 @@ class _AddVisitorSheetState extends State<_AddVisitorSheet> {
                       ],
                     ),
                     child: DropdownButtonFormField<BlockModel>(
-                      value: _selectedBlock,
+                      value: widget.blocks.isEmpty ? null : _selectedBlock,
                       isExpanded: true,
+                      menuMaxHeight: 240,
                       decoration: InputDecoration(
                         labelText: 'Select Block',
                         prefixIcon: Icon(Icons.apartment, color: AppTheme.primaryColor, size: 22),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
                       ),
-                      hint: Text('Choose block', style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16)),
+                      hint: Text(
+                        widget.blocks.isEmpty ? 'No blocks loaded' : 'Choose block',
+                        style: TextStyle(color: AppTheme.textColor.withOpacity(0.6), fontSize: 16),
+                      ),
                       items: widget.blocks.map((block) {
-                        return DropdownMenuItem(
+                        return DropdownMenuItem<BlockModel>(
                           value: block,
                           child: Text('Block ${block.name}', overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
-                      onChanged: (block) {
-                        setState(() {
-                          _selectedBlock = block;
-                          _selectedRoomOption = null;
-                        });
-                      },
+                      onChanged: widget.blocks.isEmpty
+                          ? null
+                          : (block) {
+                              setState(() {
+                                _selectedBlock = block;
+                                _selectedRoomOption = null;
+                              });
+                            },
                     ),
                   ),
                   if (_selectedBlock != null) ...[

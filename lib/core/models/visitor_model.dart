@@ -145,8 +145,9 @@ class VisitorModel extends Equatable {
   }
 
   factory VisitorModel.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] ?? json['_id'];
     return VisitorModel(
-      id: json['id'] as String,
+      id: id != null ? id.toString() : '',
       name: json['name'] as String,
       mobileNumber: json['mobileNumber'] as String,
       image: json['image'] as String?,
