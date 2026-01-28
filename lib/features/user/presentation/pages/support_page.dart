@@ -156,7 +156,7 @@ class _SupportPageState extends State<SupportPage> {
         color: AppTheme.primaryColor,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -166,7 +166,7 @@ class _SupportPageState extends State<SupportPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -185,7 +185,14 @@ class _SupportPageState extends State<SupportPage> {
                           border: OutlineInputBorder(),
                         ),
                         items: _issueTypes
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .map((s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    s,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
                             .toList(),
                         onChanged: (v) => setState(() => _selectedIssueType = v),
                       ),
@@ -336,6 +343,8 @@ class _TicketCard extends StatelessWidget {
                         fontSize: 15,
                         color: AppTheme.textColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(

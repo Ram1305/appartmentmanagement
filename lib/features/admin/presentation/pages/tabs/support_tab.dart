@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../../../../core/app_theme.dart';
 import '../../../../../../core/models/ticket_model.dart';
 import '../../../../../../core/services/api_service.dart';
-import '../../../user/presentation/pages/support_chat_page.dart';
+import '../../../../user/presentation/pages/support_chat_page.dart';
 
 class SupportTab extends StatefulWidget {
   const SupportTab({super.key});
