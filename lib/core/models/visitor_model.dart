@@ -59,6 +59,7 @@ extension VisitorTypeX on VisitorType {
 enum VisitorApprovalStatus {
   pending,
   approved,
+  rejected,
 }
 
 enum VisitorCategory {

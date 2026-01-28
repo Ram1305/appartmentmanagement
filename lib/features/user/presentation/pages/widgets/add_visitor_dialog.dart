@@ -7,16 +7,16 @@ import '../../../../../../core/models/visitor_model.dart';
 import '../../bloc/user_bloc.dart';
 import '../visitor_details_page.dart';
 
-class AddVisitorDialog extends StatefulWidget {
+class AddVisitorSheet extends StatefulWidget {
   final String userId;
 
-  const AddVisitorDialog({super.key, required this.userId});
+  const AddVisitorSheet({super.key, required this.userId});
 
   @override
-  State<AddVisitorDialog> createState() => _AddVisitorDialogState();
+  State<AddVisitorSheet> createState() => _AddVisitorSheetState();
 }
 
-class _AddVisitorDialogState extends State<AddVisitorDialog> {
+class _AddVisitorSheetState extends State<AddVisitorSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
@@ -100,6 +100,7 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
       );
 
       // Add visitor and wait for state update
+      final navigator = Navigator.of(context);
       context.read<UserBloc>().add(
             AddVisitorEvent(
               userId: widget.userId,
@@ -114,8 +115,8 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
             ),
           );
       
-      // Close dialog and navigate to visitor details
-      Navigator.pop(context);
+      // Close sheet and navigate to visitor details
+      navigator.pop();
       
       // Wait a bit for state to update, then navigate
       await Future.delayed(const Duration(milliseconds: 300));
@@ -125,8 +126,7 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
       if (state is UserLoaded && state.visitors.isNotEmpty) {
         final latestVisitor = state.visitors.last;
         if (mounted) {
-          Navigator.push(
-            context,
+          navigator.push(
             MaterialPageRoute(
               builder: (context) => VisitorDetailsPage(visitor: latestVisitor),
             ),
@@ -138,48 +138,65 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 600),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Add Visitor',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+              child: Row(
+                children: [
+                  const Text(
+                    'Add Visitor',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Image Picker (Optional)
@@ -428,41 +445,40 @@ class _AddVisitorDialogState extends State<AddVisitorDialog> {
                   ),
                 ),
               ),
-              // Actions
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: _handleAdd,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('Add Visitor'),
-                      ),
-                    ),
-                  ],
+            // Actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _handleAdd,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Add Visitor'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

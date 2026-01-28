@@ -223,25 +223,33 @@ class _SupportChatPageState extends State<SupportChatPage> {
     final showTicketError = _ticketError != null && _ticket == null;
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: Text(widget.isAdmin ? 'Support chat (Admin)' : 'Support chat'),
+      appBar: AppBar(titleSpacing: 0,
+        title: Text(widget.isAdmin ? 'Support chat ' : 'Support chat'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           if (widget.isAdmin && !_isClosed)
-            IconButton(
-              onPressed: _closing ? null : _closeTicket,
-              icon: _closing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.close_rounded),
-              tooltip: 'Close ticket',
-            ),
-        ],
+      ElevatedButton.icon(
+    onPressed: _closing ? null : _closeTicket,
+      icon: _closing
+          ? const SizedBox(
+        width: 20,
+        height: 15,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.white,
+        ),
+      )
+          : const Icon(Icons.close_rounded),
+      label: Text(_closing ? 'Closing...' : 'Close Ticket'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red, // optional
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      ),
+    ),
+    ],
       ),
       body: showTicketError
           ? Center(

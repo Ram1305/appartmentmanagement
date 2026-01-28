@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/app_theme.dart';
 import '../../../../core/models/user_model.dart';
 import '../bloc/user_bloc.dart';
-import 'widgets/add_visitor_dialog.dart';
+import 'widgets/add_visitor_dialog.dart' show AddVisitorSheet;
 import 'visitor_details_page.dart';
 
 class VisitorsPage extends StatelessWidget {
@@ -20,7 +20,7 @@ class VisitorsPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => _showAddVisitorDialog(context),
+            onPressed: () => _showAddVisitorSheet(context),
             tooltip: 'Add Visitor',
           ),
         ],
@@ -59,7 +59,7 @@ class VisitorsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      onPressed: () => _showAddVisitorDialog(context),
+                      onPressed: () => _showAddVisitorSheet(context),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Your First Visitor'),
                     ),
@@ -153,10 +153,17 @@ class VisitorsPage extends StatelessWidget {
     );
   }
 
-  void _showAddVisitorDialog(BuildContext context) {
-    showDialog(
+  void _showAddVisitorSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AddVisitorDialog(userId: user.id),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: AddVisitorSheet(userId: user.id),
+      ),
     );
   }
 

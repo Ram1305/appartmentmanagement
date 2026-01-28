@@ -4,7 +4,7 @@ import '../../../../core/app_theme.dart';
 import '../../../../core/models/user_model.dart';
 import '../../../../core/models/vehicle_model.dart';
 import '../../../../core/services/api_service.dart';
-import 'widgets/add_vehicle_dialog.dart';
+import 'widgets/add_vehicle_dialog.dart' show AddVehicleSheet;
 
 class VehiclesPage extends StatefulWidget {
   final UserModel user;
@@ -46,10 +46,17 @@ class _VehiclesPageState extends State<VehiclesPage> {
     }
   }
 
-  Future<void> _showAddVehicleDialog() async {
-    final added = await showDialog<bool>(
+  Future<void> _showAddVehicleSheet() async {
+    final added = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => const AddVehicleDialog(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: const AddVehicleSheet(),
+      ),
     );
     if (added == true && mounted) {
       _loadVehicles();
@@ -64,7 +71,7 @@ class _VehiclesPageState extends State<VehiclesPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: _showAddVehicleDialog,
+            onPressed: _showAddVehicleSheet,
             tooltip: 'Add vehicle',
           ),
         ],
@@ -91,7 +98,7 @@ class _VehiclesPageState extends State<VehiclesPage> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: _showAddVehicleDialog,
+                        onPressed: _showAddVehicleSheet,
                         icon: const Icon(Icons.add),
                         label: const Text('Add your first vehicle'),
                       ),

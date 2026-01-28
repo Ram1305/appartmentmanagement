@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../../core/app_theme.dart';
 import '../../../../../../core/models/ad_model.dart';
 import '../../../../../../core/models/user_model.dart';
+import '../../../../../../core/models/visitor_model.dart';
 import '../../../../../../core/routes/app_routes.dart';
 import '../../../../../../core/services/api_service.dart';
 import 'raise_complaint_dialog.dart';
@@ -12,6 +13,7 @@ import '../vehicles_page.dart';
 import '../family_page.dart';
 import '../gate_approval_page.dart';
 import '../security_list_page.dart';
+import '../unit_visitor_list_page.dart';
 
 class HomeTab extends StatefulWidget {
   final UserModel user;
@@ -154,6 +156,30 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  void _navigateToCabAutoList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => UnitVisitorListPage(
+          title: 'Cab / Auto',
+          visitorTypes: [VisitorType.cabTaxi],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToAllowedDeliveryList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => UnitVisitorListPage(
+          title: 'Allowed Delivery',
+          visitorTypes: [VisitorType.deliveryBoy, VisitorType.courier],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -231,14 +257,14 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Home', Icons.home_rounded, _Action.home),
       _QuickOption('Complaints', Icons.report_problem_rounded, _Action.complaints),
       _QuickOption('Payments', Icons.payment_rounded, _Action.payments),
-      _QuickOption('Helpdesk', Icons.help_rounded, _Action.helpDesk),
+      // _QuickOption('Helpdesk', Icons.help_rounded, _Action.helpDesk),
       _QuickOption('Amenities', Icons.spa_rounded, _Action.amenities),
       _QuickOption('Security', Icons.security_rounded, _Action.securityList),
-      _QuickOption('Raise Alert', Icons.warning_rounded, _Action.raiseAlert),
+      // _QuickOption('Raise Alert', Icons.warning_rounded, _Action.raiseAlert),
       _QuickOption('Gate Approval', Icons.how_to_reg_rounded, _Action.gateApproval),
       _QuickOption('Invite Guest', Icons.person_add_rounded, _Action.inviteGuest),
-      _QuickOption('Cab/Auto', Icons.local_taxi_rounded, _Action.comingSoon),
-      _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.comingSoon),
+      _QuickOption('Cab/Auto', Icons.local_taxi_rounded, _Action.cabAuto),
+      _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.allowedDelivery),
       _QuickOption('Visiting Help', Icons.people_rounded, _Action.comingSoon),
       _QuickOption('Call Security', Icons.phone_rounded, _Action.securityList),
       _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
@@ -320,6 +346,12 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.helpDesk:
         Navigator.pushNamed(context, AppRoutes.support);
         break;
+      case _Action.cabAuto:
+        _navigateToCabAutoList();
+        break;
+      case _Action.allowedDelivery:
+        _navigateToAllowedDeliveryList();
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -327,7 +359,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, comingSoon }
 
 class _QuickOption {
   final String title;
