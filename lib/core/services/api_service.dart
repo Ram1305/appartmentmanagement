@@ -3078,9 +3078,13 @@ class ApiService {
   }
 
   // Support / Help desk
-  Future<Map<String, dynamic>> getTickets() async {
+  /// [status] optional: 'active' (open + in_progress) or 'closed'. Admin only; ignored for residents.
+  Future<Map<String, dynamic>> getTickets({String? status}) async {
     try {
-      final response = await _dio.get(ApiConfig.supportTicketsBase);
+      final path = status == 'active' || status == 'closed'
+          ? '${ApiConfig.supportTicketsBase}?status=$status'
+          : ApiConfig.supportTicketsBase;
+      final response = await _dio.get(path);
       if (response.statusCode == 200) {
         return {
           'success': true,

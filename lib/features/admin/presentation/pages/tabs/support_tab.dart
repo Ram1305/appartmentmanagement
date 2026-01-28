@@ -12,8 +12,9 @@ class SupportTab extends StatefulWidget {
   State<SupportTab> createState() => _SupportTabState();
 }
 
-class _SupportTabState extends State<SupportTab> {
+class _SupportTabState extends State<SupportTab> with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
+  late TabController _tabController;
   List<TicketModel> _tickets = [];
   bool _loading = false;
   String? _error;
@@ -21,8 +22,26 @@ class _SupportTabState extends State<SupportTab> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _loadTickets();
   }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging && mounted) {
+      _loadTickets();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  String get _currentStatusFilter =>
+      _tabController.index == 0 ? 'active' : 'closed';
 
   Future<void> _loadTickets() async {
     setState(() {
@@ -30,7 +49,7 @@ class _SupportTabState extends State<SupportTab> {
       _error = null;
     });
     try {
-      final res = await _api.getTickets();
+      final res = await _api.getTickets(status: _currentStatusFilter);
       if (mounted) {
         if (res['success'] == true) {
           final list = (res['tickets'] as List?)
@@ -59,6 +78,26 @@ class _SupportTabState extends State<SupportTab> {
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TabBar(
+          controller: _tabController,
+          labelColor: AppTheme.primaryColor,
+          unselectedLabelColor: AppTheme.textColor.withOpacity(0.7),
+          indicatorColor: AppTheme.primaryColor,
+          tabs: const [
+            Tab(text: 'Active'),
+            Tab(text: 'Closed'),
+          ],
+        ),
+        Expanded(
+          child: _buildBody(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody() {
     if (_loading && _tickets.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.primaryColor),
@@ -107,7 +146,9 @@ class _SupportTabState extends State<SupportTab> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No support tickets yet',
+              _tabController.index == 0
+                  ? 'No active support tickets'
+                  : 'No closed support tickets',
               style: TextStyle(
                 fontSize: 16,
                 color: AppTheme.textColor.withOpacity(0.8),

@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/app_theme.dart';
 import '../../../../core/models/support_message_model.dart';
+import '../../../../core/models/ticket_model.dart';
 import '../../../../core/services/api_service.dart';
 
 class SupportChatPage extends StatefulWidget {
@@ -25,14 +26,86 @@ class _SupportChatPageState extends State<SupportChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<SupportMessageModel> _messages = [];
+  TicketModel? _ticket;
+  String? _ticketError;
   bool _loading = false;
   bool _sending = false;
+  bool _closing = false;
   File? _pickedImage;
+
+  bool get _isClosed => _ticket?.status == TicketStatus.closed;
 
   @override
   void initState() {
     super.initState();
+    _loadTicket();
     _loadMessages();
+  }
+
+  Future<void> _loadTicket() async {
+    setState(() => _ticketError = null);
+    try {
+      final res = await _api.getTicket(widget.ticketId);
+      if (mounted) {
+        if (res['success'] == true && res['ticket'] != null) {
+          setState(() {
+            _ticket = TicketModel.fromJson(res['ticket'] as Map<String, dynamic>);
+            _ticketError = null;
+          });
+        } else {
+          setState(() {
+            _ticket = null;
+            _ticketError = res['error']?.toString() ?? 'Failed to load ticket';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _ticket = null;
+          _ticketError = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _closeTicket() async {
+    if (_isClosed || _closing) return;
+    setState(() => _closing = true);
+    try {
+      final res = await _api.updateTicketStatus(widget.ticketId, 'closed');
+      if (mounted) {
+        setState(() => _closing = false);
+        if (res['success'] == true && res['ticket'] != null) {
+          setState(() {
+            _ticket = TicketModel.fromJson(res['ticket'] as Map<String, dynamic>);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ticket closed'),
+              backgroundColor: AppTheme.secondaryColor,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['error']?.toString() ?? 'Failed to close ticket'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _closing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -91,6 +164,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
   }
 
   Future<void> _sendMessage() async {
+    if (_isClosed) return;
     final text = _messageController.text.trim();
     if (text.isEmpty && _pickedImage == null) return;
 
@@ -146,6 +220,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showTicketError = _ticketError != null && _ticket == null;
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -153,35 +228,104 @@ class _SupportChatPageState extends State<SupportChatPage> {
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _loading && _messages.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
-                : _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No messages yet. Send one below.',
-                          style: TextStyle(color: AppTheme.textColor.withOpacity(0.7)),
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          final isUser = msg.isUser;
-                          return _MessageBubble(
-                            message: msg,
-                            isUser: isUser,
-                          );
-                        },
-                      ),
-          ),
-          _buildInputArea(),
+        actions: [
+          if (widget.isAdmin && !_isClosed)
+            IconButton(
+              onPressed: _closing ? null : _closeTicket,
+              icon: _closing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.close_rounded),
+              tooltip: 'Close ticket',
+            ),
         ],
+      ),
+      body: showTicketError
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      _ticketError!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppTheme.textColor),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      onPressed: _loadTicket,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: _loading && _messages.isEmpty
+                      ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
+                      : _messages.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No messages yet. Send one below.',
+                                style: TextStyle(color: AppTheme.textColor.withOpacity(0.7)),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              itemCount: _messages.length,
+                              itemBuilder: (context, index) {
+                                final msg = _messages[index];
+                                final isUser = msg.isUser;
+                                return _MessageBubble(
+                                  message: msg,
+                                  isUser: isUser,
+                                );
+                              },
+                            ),
+                ),
+                if (_isClosed) _buildClosedBanner() else _buildInputArea(),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildClosedBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.dividerColor.withOpacity(0.5),
+        border: Border(top: BorderSide(color: AppTheme.textColor.withOpacity(0.2))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: AppTheme.textColor.withOpacity(0.7), size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                widget.isAdmin
+                    ? 'Ticket closed'
+                    : 'This conversation is closed. You cannot send messages.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textColor.withOpacity(0.9),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -204,7 +348,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             GestureDetector(
-              onTap: _pickImage,
+              onTap: _isClosed ? null : _pickImage,
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -230,6 +374,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
                 controller: _messageController,
                 maxLines: null,
                 textInputAction: TextInputAction.send,
+                readOnly: _isClosed,
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
                   border: OutlineInputBorder(
@@ -245,7 +390,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
             ),
             const SizedBox(width: 10),
             GestureDetector(
-              onTap: _sending ? null : _sendMessage,
+              onTap: (_sending || _isClosed) ? null : _sendMessage,
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(

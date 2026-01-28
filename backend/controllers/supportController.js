@@ -84,6 +84,14 @@ const getTickets = async (req, res) => {
     let query = {};
     if (callerType === 'user') {
       query.userId = req.userId;
+    } else {
+      // Admin/manager: optional status filter (active | closed)
+      const statusParam = req.query.status;
+      if (statusParam === 'closed') {
+        query.status = 'closed';
+      } else if (statusParam === 'active' || !statusParam) {
+        query.status = { $in: ['open', 'in_progress'] };
+      }
     }
 
     const tickets = await Ticket.find(query)
@@ -242,6 +250,13 @@ const sendMessage = async (req, res) => {
     const ticketUserId = ticket.userId.toString();
     if (callerType === 'user' && ticketUserId !== req.userId) {
       return res.status(403).json({ success: false, error: 'Not allowed to post on this ticket.' });
+    }
+
+    if (ticket.status === 'closed' && callerType === 'user') {
+      return res.status(403).json({
+        success: false,
+        error: 'This ticket is closed. You cannot send messages.',
+      });
     }
 
     const messageText = (req.body && req.body.message) ? String(req.body.message).trim() : '';
