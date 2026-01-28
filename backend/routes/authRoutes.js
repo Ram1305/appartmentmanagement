@@ -21,7 +21,6 @@ const {
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { uploadToCloudinary } = require('../middleware/upload');
-const { otpLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 // Configure multer for memory storage (to upload to Cloudinary)
 const storage = multer.memoryStorage();
@@ -66,22 +65,22 @@ router.post('/login', loginUser);
 // @route   POST /api/auth/send-otp
 // @desc    Send OTP for email verification
 // @access  Public
-router.post('/send-otp', otpLimiter, sendOTP);
+router.post('/send-otp', sendOTP);
 
 // @route   POST /api/auth/verify-otp
 // @desc    Verify OTP
 // @access  Public
-router.post('/verify-otp', otpLimiter, verifyOTP);
+router.post('/verify-otp', verifyOTP);
 
 // @route   POST /api/auth/forgot-password
 // @desc    Send password reset OTP
 // @access  Public
-router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/forgot-password', forgotPassword);
 
 // @route   POST /api/auth/reset-password
 // @desc    Reset password
 // @access  Public
-router.post('/reset-password', passwordResetLimiter, resetPassword);
+router.post('/reset-password', resetPassword);
 
 // @route   GET /api/auth/me
 // @desc    Get current user

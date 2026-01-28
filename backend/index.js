@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/database');
 const securityHeaders = require('./middleware/securityHeaders');
-const { apiLimiter } = require('./middleware/rateLimiter');
 
 // Load env vars
 dotenv.config();
@@ -15,9 +14,6 @@ const app = express();
 
 // Security headers middleware (apply to all routes)
 app.use(securityHeaders);
-
-// General API rate limiting
-app.use('/api/', apiLimiter);
 
 // Middleware - CORS configuration
 const allowedOrigins = [
