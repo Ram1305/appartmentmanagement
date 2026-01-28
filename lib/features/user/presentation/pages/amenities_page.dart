@@ -88,12 +88,12 @@ class _AmenitiesPageState extends State<AmenitiesPage> {
               : RefreshIndicator(
                   onRefresh: _loadAmenities,
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(24),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
+                      childAspectRatio: 1.0,
                     ),
                     itemCount: _amenities.length,
                     itemBuilder: (context, index) {
@@ -104,7 +104,7 @@ class _AmenitiesPageState extends State<AmenitiesPage> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -116,7 +116,7 @@ class _AmenitiesPageState extends State<AmenitiesPage> {
                                 ),
                                 child: Icon(
                                   Icons.spa_rounded,
-                                  size: 36,
+                                  size: 30,
                                   color: AppTheme.primaryColor,
                                 ),
                               ),

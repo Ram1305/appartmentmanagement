@@ -14,6 +14,214 @@ const List<String> _paymentTypes = [
   'Penalty', 'Electricity', 'Water',
 ];
 
+/// Edit payment sheet as StatefulWidget so controllers are disposed in [dispose].
+class _EditPaymentSheetContent extends StatefulWidget {
+  final PaymentModel payment;
+  final ApiService api;
+  final VoidCallback onSaved;
+
+  const _EditPaymentSheetContent({
+    required this.payment,
+    required this.api,
+    required this.onSaved,
+  });
+
+  @override
+  State<_EditPaymentSheetContent> createState() => _EditPaymentSheetContentState();
+}
+
+class _EditPaymentSheetContentState extends State<_EditPaymentSheetContent> {
+  late int _selectedMonth;
+  late int _selectedYear;
+  late String _selectedStatus;
+  final Map<String, TextEditingController> _controllers = {};
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMonth = _monthNames.indexOf(widget.payment.month) + 1;
+    if (_selectedMonth < 1) _selectedMonth = DateTime.now().month;
+    _selectedYear = widget.payment.year;
+    _selectedStatus = widget.payment.status;
+    for (final t in _paymentTypes) {
+      PaymentLineItem? item;
+      for (final e in widget.payment.lineItems) {
+        if (e.type == t) { item = e; break; }
+      }
+      final amt = item?.amount ?? 0.0;
+      _controllers[t] = TextEditingController(text: amt > 0 ? amt.toStringAsFixed(0) : '');
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double total = 0;
+    for (final t in _paymentTypes) {
+      total += double.tryParse(_controllers[t]?.text ?? '') ?? 0;
+    }
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text('Edit payment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedMonth,
+                    decoration: const InputDecoration(labelText: 'Month', border: OutlineInputBorder()),
+                    items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_monthNames[i]))),
+                    onChanged: _saving ? null : (v) => setState(() => _selectedMonth = v ?? _selectedMonth),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedYear,
+                    decoration: const InputDecoration(labelText: 'Year', border: OutlineInputBorder()),
+                    items: [DateTime.now().year - 1, DateTime.now().year, DateTime.now().year + 1]
+                        .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
+                        .toList(),
+                    onChanged: _saving ? null : (v) => setState(() => _selectedYear = v ?? _selectedYear),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _selectedStatus,
+              decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+              items: const [
+                DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                DropdownMenuItem(value: 'paid', child: Text('Paid')),
+                DropdownMenuItem(value: 'overdue', child: Text('Overdue')),
+              ],
+              onChanged: _saving ? null : (v) => setState(() => _selectedStatus = v ?? _selectedStatus),
+            ),
+            const SizedBox(height: 12),
+            const Text('Line items', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            ..._paymentTypes.map((type) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 130, child: Text(type, style: const TextStyle(fontSize: 13))),
+                      Expanded(
+                        child: TextField(
+                          controller: _controllers[type],
+                          keyboardType: TextInputType.number,
+                          enabled: !_saving,
+                          decoration: InputDecoration(
+                            hintText: '0',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            Text(
+              'Total: ₹${total.toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _save,
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                    child: _saving
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Save'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    final lineItems = <Map<String, dynamic>>[];
+    for (final type in _paymentTypes) {
+      final amt = double.tryParse(_controllers[type]?.text ?? '') ?? 0;
+      if (amt > 0) lineItems.add({'type': type, 'amount': amt});
+    }
+    if (lineItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add at least one amount'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final res = await widget.api.updatePayment(
+        widget.payment.id,
+        month: _monthNames[_selectedMonth - 1],
+        year: _selectedYear,
+        status: _selectedStatus,
+        lineItems: lineItems,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      widget.onSaved();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          res['success'] == true
+              ? const SnackBar(content: Text('Payment updated'), backgroundColor: Colors.green)
+              : SnackBar(
+                  content: Text(res['error']?.toString() ?? 'Failed to update'),
+                  backgroundColor: Colors.red,
+                ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
+  }
+}
+
 class PaymentsTab extends StatefulWidget {
   final AdminLoaded state;
   /// When non-null, [parentTabController] and [parentTabIndex] are used to
@@ -346,172 +554,16 @@ class _PaymentsTabState extends State<PaymentsTab> with SingleTickerProviderStat
   }
 
   void _showEditPaymentSheet(PaymentModel p) {
-    int selectedMonth = _monthNames.indexOf(p.month) + 1;
-    if (selectedMonth < 1) selectedMonth = DateTime.now().month;
-    int selectedYear = p.year;
-    String selectedStatus = p.status;
-    final controllers = <String, TextEditingController>{};
-    for (final t in _paymentTypes) {
-      PaymentLineItem? item;
-      for (final e in p.lineItems) {
-        if (e.type == t) { item = e; break; }
-      }
-      final amt = item?.amount ?? 0.0;
-      controllers[t] = TextEditingController(text: amt > 0 ? amt.toStringAsFixed(0) : '');
-    }
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          double total = 0;
-          for (final t in _paymentTypes) {
-            total += double.tryParse(controllers[t]?.text ?? '') ?? 0;
-          }
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 16),
-                      child: Text('Edit payment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          value: selectedMonth,
-                          decoration: const InputDecoration(labelText: 'Month', border: OutlineInputBorder()),
-                          items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_monthNames[i]))),
-                          onChanged: (v) => setModalState(() => selectedMonth = v ?? selectedMonth),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          value: selectedYear,
-                          decoration: const InputDecoration(labelText: 'Year', border: OutlineInputBorder()),
-                          items: [DateTime.now().year - 1, DateTime.now().year, DateTime.now().year + 1]
-                              .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
-                              .toList(),
-                          onChanged: (v) => setModalState(() => selectedYear = v ?? selectedYear),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: selectedStatus,
-                    decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                      DropdownMenuItem(value: 'paid', child: Text('Paid')),
-                      DropdownMenuItem(value: 'overdue', child: Text('Overdue')),
-                    ],
-                    onChanged: (v) => setModalState(() => selectedStatus = v ?? selectedStatus),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Line items', style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  ..._paymentTypes.map((type) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            SizedBox(width: 130, child: Text(type, style: const TextStyle(fontSize: 13))),
-                            Expanded(
-                              child: TextField(
-                                controller: controllers[type],
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: '0',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                onChanged: (_) => setModalState(() {}),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                  Text(
-                    'Total: ₹${total.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final lineItems = <Map<String, dynamic>>[];
-                            for (final type in _paymentTypes) {
-                              final amt = double.tryParse(controllers[type]?.text ?? '') ?? 0;
-                              if (amt > 0) lineItems.add({'type': type, 'amount': amt});
-                            }
-                            if (lineItems.isEmpty) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                const SnackBar(content: Text('Add at least one amount'), backgroundColor: Colors.red),
-                              );
-                              return;
-                            }
-                            final res = await _api.updatePayment(
-                              p.id,
-                              month: _monthNames[selectedMonth - 1],
-                              year: selectedYear,
-                              status: selectedStatus,
-                              lineItems: lineItems,
-                            );
-                            if (!ctx.mounted) return;
-                            Navigator.pop(ctx);
-                            if (res['success'] == true) {
-                              _loadPayments();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Payment updated'), backgroundColor: Colors.green),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(res['error']?.toString() ?? 'Failed to update'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                          child: const Text('Save'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      builder: (ctx) => _EditPaymentSheetContent(
+        payment: p,
+        api: _api,
+        onSaved: _loadPayments,
       ),
-    ).whenComplete(() {
-      for (final c in controllers.values) {
-        c.dispose();
-      }
-    });
+    );
   }
 
   @override

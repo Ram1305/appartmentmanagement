@@ -231,7 +231,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Home', Icons.home_rounded, _Action.home),
       _QuickOption('Complaints', Icons.report_problem_rounded, _Action.complaints),
       _QuickOption('Payments', Icons.payment_rounded, _Action.payments),
-      _QuickOption('Helpdesk', Icons.help_rounded, _Action.comingSoon),
+      _QuickOption('Helpdesk', Icons.help_rounded, _Action.helpDesk),
       _QuickOption('Amenities', Icons.spa_rounded, _Action.amenities),
       _QuickOption('Security', Icons.security_rounded, _Action.securityList),
       _QuickOption('Raise Alert', Icons.warning_rounded, _Action.raiseAlert),
@@ -246,7 +246,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.comingSoon),
       _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.vehicles),
-      _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.comingSoon),
+      _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.helpDesk),
       _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.comingSoon),
     ];
 
@@ -317,6 +317,9 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.payments:
         Navigator.pushNamed(context, AppRoutes.payments);
         break;
+      case _Action.helpDesk:
+        Navigator.pushNamed(context, AppRoutes.support);
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -324,7 +327,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, comingSoon }
 
 class _QuickOption {
   final String title;

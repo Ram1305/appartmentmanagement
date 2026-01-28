@@ -13,6 +13,8 @@ import '../../features/security/presentation/pages/security_dashboard_page.dart'
 import '../../features/user/presentation/pages/coming_soon_page.dart';
 import '../../features/user/presentation/pages/amenities_page.dart';
 import '../../features/user/presentation/pages/payments_page.dart';
+import '../../features/user/presentation/pages/support_page.dart';
+import '../../features/user/presentation/pages/support_chat_page.dart';
 import '../../core/models/block_model.dart';
 
 class AppRoutes {
@@ -31,6 +33,8 @@ class AppRoutes {
   static const String featureComingSoon = '/feature-coming-soon';
   static const String amenities = '/amenities';
   static const String payments = '/payments';
+  static const String support = '/support';
+  static const String supportChat = '/support-chat';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -59,6 +63,13 @@ class AppRoutes {
       },
       amenities: (context) => const AmenitiesPage(),
       payments: (context) => const PaymentsPage(),
+      support: (context) => const SupportPage(),
+      supportChat: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final ticketId = args?['ticketId'] as String? ?? '';
+        final isAdmin = args?['isAdmin'] as bool? ?? false;
+        return SupportChatPage(ticketId: ticketId, isAdmin: isAdmin);
+      },
     };
   }
 }

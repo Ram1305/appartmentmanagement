@@ -3076,4 +3076,146 @@ class ApiService {
       };
     }
   }
+
+  // Support / Help desk
+  Future<Map<String, dynamic>> getTickets() async {
+    try {
+      final response = await _dio.get(ApiConfig.supportTicketsBase);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'tickets': response.data['tickets'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get tickets',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createTicket({
+    required String issueType,
+    required String description,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.supportTicketsBase,
+        data: {'issueType': issueType.trim(), 'description': description.trim()},
+      );
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'ticket': response.data['ticket'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to create ticket',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getTicket(String id) async {
+    try {
+      final response = await _dio.get(ApiConfig.supportTicketById(id));
+      if (response.statusCode == 200) {
+        return {'success': true, 'ticket': response.data['ticket']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get ticket',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getSupportMessages(String ticketId) async {
+    try {
+      final response = await _dio.get(ApiConfig.supportMessages(ticketId));
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'messages': response.data['messages'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get messages',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> sendSupportMessage(
+    String ticketId, {
+    String? message,
+    File? image,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        if (message != null && message.trim().isNotEmpty) 'message': message.trim(),
+        if (image != null)
+          'image': await MultipartFile.fromFile(
+            image.path,
+            filename: 'support_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+      });
+      final response = await _dio.post(
+        ApiConfig.supportSendMessage(ticketId),
+        data: formData,
+      );
+      if (response.statusCode == 201) {
+        return {'success': true, 'message': response.data['message']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to send message',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateTicketStatus(String ticketId, String status) async {
+    try {
+      final response = await _dio.patch(
+        ApiConfig.supportTicketStatus(ticketId),
+        data: {'status': status},
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'ticket': response.data['ticket']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to update status',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }

@@ -120,6 +120,13 @@ class ApiConfig {
   // Security list for residents
   static String get getSecurityList => '$securityBase/list';
 
+  // Support / Help desk endpoints
+  static String get supportTicketsBase => '$baseUrl/support/tickets';
+  static String supportTicketById(String id) => '$supportTicketsBase/$id';
+  static String supportMessages(String ticketId) => '$supportTicketsBase/$ticketId/messages';
+  static String supportSendMessage(String ticketId) => '$supportTicketsBase/$ticketId/messages';
+  static String supportTicketStatus(String id) => '$supportTicketsBase/$id/status';
+
   // Health check
   static String get health => '$baseUrl/health';
 }
