@@ -44,6 +44,29 @@ const getPlans = async (req, res) => {
   }
 };
 
+// @desc    Get all subscription plans (history) - admin only, includes inactive
+// @route   GET /api/subscription/plans/history
+const getPlansHistory = async (req, res) => {
+  try {
+    const count = await SubscriptionPlan.countDocuments();
+    if (count === 0) {
+      return res.json({ success: true, plans: [] });
+    }
+    const plans = await SubscriptionPlan.find({})
+      .sort({ displayOrder: 1, createdAt: -1 });
+    res.json({
+      success: true,
+      plans,
+    });
+  } catch (error) {
+    console.error('Get subscription plans history error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 // @desc    Create Razorpay order for subscription (admin only)
 // @route   POST /api/subscription/create-order
 const createOrder = async (req, res) => {
@@ -272,6 +295,7 @@ const getAppActive = async (req, res) => {
 
 module.exports = {
   getPlans,
+  getPlansHistory,
   createOrder,
   verifyPayment,
   getMySubscription,

@@ -207,8 +207,8 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    // Check all collections for the user and determine which model they belong to
-    // Check Admin, Manager, Security first, then User (to prioritize admin/manager/security over regular users)
+    // Check all collections for the user and determine which model they belong to.
+    // Admin login must come from Admin collection only (not User with userType 'admin').
     let user = null;
     let foundModelType = null;
     const modelMap = [
@@ -217,11 +217,17 @@ const loginUser = async (req, res) => {
       { Model: Security, type: 'security' },
       { Model: User, type: 'user' }
     ];
-    
+
     for (const { Model, type } of modelMap) {
       user = await Model.findOne({ $or: [{ email: identifier }, { username: identifier }] })
         .select('+password +failedLoginAttempts +lockUntil');
       if (user) {
+        // Admin login only from Admin collection: reject if found in User with userType 'admin'
+        if (type === 'user' && user.userType === 'admin') {
+          user = null;
+          foundModelType = null;
+          break;
+        }
         foundModelType = type;
         break;
       }
@@ -262,8 +268,7 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Use the user's actual userType field for validation, not just the collection
-    // This handles cases where admin/manager might be in User collection but have correct userType
+    // Use the user's actual userType field for validation (admin comes from Admin collection only)
     // For Security users, always use 'security' since it's immutable and should always be 'security'
     let actualUserType;
     if (foundModelType === 'security') {
