@@ -32,6 +32,9 @@ class UserModel extends Equatable {
   final String? floor;
   final String? roomNumber;
   final bool isActive;
+  final bool? subscriptionStatus;
+  final DateTime? subscriptionEndsAt;
+  final int? daysLeft;
 
   const UserModel({
     required this.id,
@@ -56,6 +59,9 @@ class UserModel extends Equatable {
     this.floor,
     this.roomNumber,
     this.isActive = true,
+    this.subscriptionStatus,
+    this.subscriptionEndsAt,
+    this.daysLeft,
   });
 
   UserModel copyWith({
@@ -81,6 +87,9 @@ class UserModel extends Equatable {
     String? floor,
     String? roomNumber,
     bool? isActive,
+    bool? subscriptionStatus,
+    DateTime? subscriptionEndsAt,
+    int? daysLeft,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -107,6 +116,9 @@ class UserModel extends Equatable {
       floor: floor ?? this.floor,
       roomNumber: roomNumber ?? this.roomNumber,
       isActive: isActive ?? this.isActive,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionEndsAt: subscriptionEndsAt ?? this.subscriptionEndsAt,
+      daysLeft: daysLeft ?? this.daysLeft,
     );
   }
 
@@ -134,6 +146,9 @@ class UserModel extends Equatable {
       'floor': floor,
       'roomNumber': roomNumber,
       'isActive': isActive,
+      if (subscriptionStatus != null) 'subscriptionStatus': subscriptionStatus,
+      if (subscriptionEndsAt != null) 'subscriptionEndsAt': subscriptionEndsAt?.toIso8601String(),
+      if (daysLeft != null) 'daysLeft': daysLeft,
     };
   }
 
@@ -207,6 +222,13 @@ class UserModel extends Equatable {
       floor: json['floor'] as String?,
       roomNumber: json['roomNumber'] as String?,
       isActive: json['isActive'] as bool? ?? true,
+      subscriptionStatus: json['subscriptionStatus'] as bool?,
+      subscriptionEndsAt: json['subscriptionEndsAt'] != null
+          ? DateTime.tryParse(json['subscriptionEndsAt'].toString())
+          : null,
+      daysLeft: json['daysLeft'] is int
+          ? json['daysLeft'] as int
+          : (json['daysLeft'] as num?)?.toInt(),
     );
   }
 
@@ -234,5 +256,8 @@ class UserModel extends Equatable {
         floor,
         roomNumber,
         isActive,
+        subscriptionStatus,
+        subscriptionEndsAt,
+        daysLeft,
       ];
 }

@@ -1,14 +1,31 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const cron = require('node-cron');
 const connectDB = require('./config/database');
 const securityHeaders = require('./middleware/securityHeaders');
+const Admin = require('./models/Admin');
 
 // Load env vars
 dotenv.config();
 
 // Connect to database
 connectDB();
+
+// Daily cron: expire admin subscriptions at 00:05
+cron.schedule('5 0 * * *', async () => {
+  try {
+    const result = await Admin.updateMany(
+      { subscriptionEndsAt: { $lte: new Date() } },
+      { $set: { subscriptionStatus: false } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`[Cron] Expired ${result.modifiedCount} admin subscription(s).`);
+    }
+  } catch (err) {
+    console.error('[Cron] Subscription expiry error:', err);
+  }
+});
 
 const app = express();
 
@@ -71,6 +88,7 @@ app.use('/api/family-members', require('./routes/familyMemberRoutes'));
 app.use('/api/ads', require('./routes/adRoutes'));
 app.use('/api/amenities', require('./routes/amenityRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

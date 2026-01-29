@@ -314,32 +314,46 @@ const loginUser = async (req, res) => {
 
     // Use actualUserType to ensure correct userType is returned
     const finalUserType = actualUserType || foundModelType || 'user';
-    
+
+    const userPayload = {
+      id: user._id.toString(),
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      mobileNumber: user.mobileNumber,
+      secondaryMobileNumber: user.secondaryMobileNumber,
+      gender: user.gender,
+      userType: finalUserType,
+      status: user.status,
+      profilePic: user.profilePic,
+      aadhaarCard: user.aadhaarCard,
+      aadhaarCardFrontImage: user.aadhaarCardFrontImage,
+      aadhaarCardBackImage: user.aadhaarCardBackImage,
+      panCard: user.panCard,
+      panCardImage: user.panCardImage,
+      familyType: user.familyType,
+      totalOccupants: user.totalOccupants,
+      block: user.block,
+      floor: user.floor,
+      roomNumber: user.roomNumber,
+      isActive: user.isActive,
+    };
+
+    if (foundModelType === 'admin' && user.subscriptionEndsAt != null) {
+      const now = Date.now();
+      const end = new Date(user.subscriptionEndsAt).getTime();
+      userPayload.subscriptionStatus = !!user.subscriptionStatus && end > now;
+      userPayload.subscriptionEndsAt = user.subscriptionEndsAt;
+      userPayload.daysLeft = end <= now ? 0 : Math.ceil((end - now) / (24 * 60 * 60 * 1000));
+    } else if (foundModelType === 'admin') {
+      userPayload.subscriptionStatus = false;
+      userPayload.subscriptionEndsAt = null;
+      userPayload.daysLeft = 0;
+    }
+
     res.json({
       message: 'Login successful',
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        mobileNumber: user.mobileNumber,
-        secondaryMobileNumber: user.secondaryMobileNumber,
-        gender: user.gender,
-        userType: finalUserType,
-        status: user.status,
-        profilePic: user.profilePic,
-        aadhaarCard: user.aadhaarCard,
-        aadhaarCardFrontImage: user.aadhaarCardFrontImage,
-        aadhaarCardBackImage: user.aadhaarCardBackImage,
-        panCard: user.panCard,
-        panCardImage: user.panCardImage,
-        familyType: user.familyType,
-        totalOccupants: user.totalOccupants,
-        block: user.block,
-        floor: user.floor,
-        roomNumber: user.roomNumber,
-        isActive: user.isActive,
-      },
+      user: userPayload,
       token,
     });
   } catch (error) {
@@ -649,30 +663,44 @@ const getCurrentUser = async (req, res) => {
       });
     }
 
+    const userPayload = {
+      id: user._id.toString(),
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      mobileNumber: user.mobileNumber,
+      secondaryMobileNumber: user.secondaryMobileNumber,
+      gender: user.gender,
+      userType: user.userType,
+      status: user.status,
+      profilePic: user.profilePic,
+      aadhaarCard: user.aadhaarCard,
+      aadhaarCardFrontImage: user.aadhaarCardFrontImage,
+      aadhaarCardBackImage: user.aadhaarCardBackImage,
+      panCard: user.panCard,
+      panCardImage: user.panCardImage,
+      familyType: user.familyType,
+      totalOccupants: user.totalOccupants,
+      block: user.block,
+      floor: user.floor,
+      roomNumber: user.roomNumber,
+      isActive: user.isActive,
+    };
+
+    if (user.subscriptionEndsAt != null) {
+      const now = Date.now();
+      const end = new Date(user.subscriptionEndsAt).getTime();
+      userPayload.subscriptionStatus = !!user.subscriptionStatus && end > now;
+      userPayload.subscriptionEndsAt = user.subscriptionEndsAt;
+      userPayload.daysLeft = end <= now ? 0 : Math.ceil((end - now) / (24 * 60 * 60 * 1000));
+    } else if (user.userType === 'admin') {
+      userPayload.subscriptionStatus = false;
+      userPayload.subscriptionEndsAt = null;
+      userPayload.daysLeft = 0;
+    }
+
     res.json({
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        mobileNumber: user.mobileNumber,
-        secondaryMobileNumber: user.secondaryMobileNumber,
-        gender: user.gender,
-        userType: user.userType,
-        status: user.status,
-        profilePic: user.profilePic,
-        aadhaarCard: user.aadhaarCard,
-        aadhaarCardFrontImage: user.aadhaarCardFrontImage,
-        aadhaarCardBackImage: user.aadhaarCardBackImage,
-        panCard: user.panCard,
-        panCardImage: user.panCardImage,
-        familyType: user.familyType,
-        totalOccupants: user.totalOccupants,
-        block: user.block,
-        floor: user.floor,
-        roomNumber: user.roomNumber,
-        isActive: user.isActive,
-      },
+      user: userPayload,
     });
   } catch (error) {
     console.error('Get current user error:', error);

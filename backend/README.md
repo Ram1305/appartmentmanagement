@@ -38,6 +38,8 @@ Update the following in `.env`:
 - `EMAIL_USER`: Your email for sending OTPs
 - `EMAIL_PASS`: Your email app password
 - `FRONTEND_URL`: Your frontend URL (for CORS)
+- `RAZORPAY_KEY_ID`: Your Razorpay API key (from Razorpay Dashboard)
+- `RAZORPAY_KEY_SECRET`: Your Razorpay API secret (from Razorpay Dashboard) — used for payments and admin subscription
 
 ### 3. Start MongoDB
 

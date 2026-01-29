@@ -127,6 +127,14 @@ class ApiConfig {
   static String supportSendMessage(String ticketId) => '$supportTicketsBase/$ticketId/messages';
   static String supportTicketStatus(String id) => '$supportTicketsBase/$id/status';
 
+  // Subscription endpoints (admin subscription, app-active for user/security)
+  static String get subscriptionBase => '$baseUrl/subscription';
+  static String get subscriptionPlans => '$subscriptionBase/plans';
+  static String get subscriptionCreateOrder => '$subscriptionBase/create-order';
+  static String get subscriptionVerify => '$subscriptionBase/verify';
+  static String get subscriptionMy => '$subscriptionBase/my';
+  static String get subscriptionAppActive => '$subscriptionBase/app-active';
+
   // Health check
   static String get health => '$baseUrl/health';
 }

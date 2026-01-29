@@ -6,6 +6,8 @@ import '../../features/auth/presentation/pages/user_type_selection_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/waiting_approval_page.dart';
 import '../guards/admin_route_guard.dart';
+import '../guards/maintenance_route_guard.dart';
+import '../../features/maintenance/presentation/pages/maintenance_page.dart';
 import '../../features/admin/presentation/pages/block_details_page.dart';
 import '../../features/manager/presentation/pages/manager_dashboard_page.dart';
 import '../../features/user/presentation/pages/user_dashboard_page.dart';
@@ -35,6 +37,7 @@ class AppRoutes {
   static const String payments = '/payments';
   static const String support = '/support';
   static const String supportChat = '/support-chat';
+  static const String maintenance = '/maintenance';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -54,8 +57,13 @@ class AppRoutes {
         return BlockDetailsPage(block: block);
       },
       managerDashboard: (context) => const ManagerDashboardPage(),
-      userDashboard: (context) => const UserDashboardPage(),
-      securityDashboard: (context) => const SecurityDashboardPage(),
+      userDashboard: (context) => MaintenanceRouteGuard(
+        child: const UserDashboardPage(),
+      ),
+      securityDashboard: (context) => MaintenanceRouteGuard(
+        child: const SecurityDashboardPage(),
+      ),
+      maintenance: (context) => const MaintenancePage(),
       featureComingSoon: (context) {
         final args = ModalRoute.of(context)?.settings.arguments;
         final featureName = args is Map ? args['featureName'] as String? : null;

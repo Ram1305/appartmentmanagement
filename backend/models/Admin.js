@@ -96,6 +96,19 @@ const adminSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    subscriptionStatus: {
+      type: Boolean,
+      default: false,
+    },
+    subscriptionEndsAt: {
+      type: Date,
+      default: null,
+    },
+    subscriptionPlanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubscriptionPlan',
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -14,6 +14,7 @@ import 'tabs/notices_tab.dart';
 import 'tabs/ads_tab.dart';
 import 'tabs/amenities_tab.dart';
 import 'tabs/support_tab.dart';
+import 'tabs/subscription_tab.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -30,7 +31,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 11, vsync: this);
+    _tabController = TabController(length: 12, vsync: this);
     context.read<AdminBloc>().add(LoadBlocksEvent());
     // Initialize dummy data on first load
     context.read<AdminBloc>().add(InitializeDummyDataEvent());
@@ -83,6 +84,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
             Tab(icon: Icon(Icons.campaign), text: 'Ads'),
             Tab(icon: Icon(Icons.spa), text: 'Amenities'),
             Tab(icon: Icon(Icons.support_agent), text: 'Support'),
+            Tab(icon: Icon(Icons.card_membership), text: 'Subscription'),
           ],
         ),
         actions: [
@@ -121,6 +123,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 AdsTab(state: state),
                 AmenitiesTab(state: state),
                 const SupportTab(),
+                const SubscriptionTab(),
               ],
             );
           }
@@ -165,6 +168,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                   AdsTab(state: _lastLoadedState!),
                   AmenitiesTab(state: _lastLoadedState!),
                   const SupportTab(),
+                  const SubscriptionTab(),
                 ],
               );
             }

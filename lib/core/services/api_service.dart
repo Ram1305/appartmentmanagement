@@ -1946,6 +1946,131 @@ class ApiService {
     }
   }
 
+  // Subscription (admin plans, create order, verify, my, app-active)
+  Future<Map<String, dynamic>> getSubscriptionPlans() async {
+    try {
+      final response = await _dio.get(ApiConfig.subscriptionPlans);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'plans': response.data['plans'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get plans',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createSubscriptionOrder(String planId) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.subscriptionCreateOrder,
+        data: {'planId': planId},
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'orderId': response.data['orderId'],
+          'amount': response.data['amount'],
+          'currency': response.data['currency'] ?? 'INR',
+          'keyId': response.data['keyId'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to create order',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> verifySubscription({
+    required String orderId,
+    required String razorpayPaymentId,
+    required String signature,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.subscriptionVerify,
+        data: {
+          'orderId': orderId,
+          'razorpayPaymentId': razorpayPaymentId,
+          'signature': signature,
+        },
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'],
+          'subscriptionStatus': response.data['subscriptionStatus'],
+          'subscriptionEndsAt': response.data['subscriptionEndsAt'],
+          'daysLeft': response.data['daysLeft'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Verification failed',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getMySubscription() async {
+    try {
+      final response = await _dio.get(ApiConfig.subscriptionMy);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'subscriptionStatus': response.data['subscriptionStatus'],
+          'subscriptionEndsAt': response.data['subscriptionEndsAt'],
+          'daysLeft': response.data['daysLeft'],
+          'plan': response.data['plan'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get subscription',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getSubscriptionAppActive() async {
+    try {
+      final response = await _dio.get(ApiConfig.subscriptionAppActive);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'active': response.data['active'] == true,
+        };
+      }
+      return {'success': false, 'active': false};
+    } on DioException catch (e) {
+      return {'success': false, 'active': false, 'error': e.message};
+    } catch (e) {
+      return {'success': false, 'active': false, 'error': e.toString()};
+    }
+  }
+
   // Get all notices
   Future<Map<String, dynamic>> getAllNotices({
     String? type,

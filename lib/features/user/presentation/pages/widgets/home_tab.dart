@@ -180,6 +180,18 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  void _navigateToDailyHelpList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => UnitVisitorListPage(
+          title: 'My Daily Help',
+          visitorTypes: [VisitorType.maid],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -270,7 +282,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
       _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
       _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
-      _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.comingSoon),
+      _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.dailyHelp),
       _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.vehicles),
       _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.helpDesk),
       _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.comingSoon),
@@ -352,6 +364,9 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.allowedDelivery:
         _navigateToAllowedDeliveryList();
         break;
+      case _Action.dailyHelp:
+        _navigateToDailyHelpList();
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -359,7 +374,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, dailyHelp, comingSoon }
 
 class _QuickOption {
   final String title;
