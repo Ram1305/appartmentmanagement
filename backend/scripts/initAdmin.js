@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('../models/User');
+const Admin = require('../models/Admin');
 
 // Load env vars
 dotenv.config();
@@ -21,8 +21,8 @@ const initAdmin = async () => {
   try {
     await connectDB();
 
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({
+    // Check if admin already exists in Admin collection
+    const existingAdmin = await Admin.findOne({
       $or: [
         { email: 'admin@gmail.com' },
         { username: 'admin' },
@@ -36,15 +36,13 @@ const initAdmin = async () => {
       process.exit(0);
     }
 
-    // Create default admin
-    const admin = await User.create({
+    // Create default admin in Admin collection
+    const admin = await Admin.create({
       name: 'Admin',
       username: 'admin',
       email: 'admin@gmail.com',
       password: '123456', // Minimum 6 characters required
       mobileNumber: '1234567890',
-      userType: 'admin',
-      status: 'approved',
     });
 
     console.log('✅ Default admin created successfully!');
@@ -62,4 +60,3 @@ const initAdmin = async () => {
 
 // Run the script
 initAdmin();
-

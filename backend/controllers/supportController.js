@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 
 /**
  * Resolve whether the caller is admin or user (resident).
- * Admins can be in Admin collection or User collection with userType 'admin'.
+ * Admins are determined only from the Admin collection (not User).
  * @returns {'admin'|'user'|null}
  */
 const getCallerType = async (req) => {
@@ -16,11 +16,7 @@ const getCallerType = async (req) => {
   const admin = await Admin.findById(req.userId);
   if (admin) return 'admin';
   const user = await User.findById(req.userId);
-  if (user) {
-    // User collection can contain admins (e.g. default admin from initAdmin script)
-    if (user.userType === 'admin') return 'admin';
-    return 'user';
-  }
+  if (user) return 'user';
   const manager = await Manager.findById(req.userId);
   if (manager) return 'admin'; // managers see all tickets like admin
   return null;
