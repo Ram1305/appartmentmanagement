@@ -63,6 +63,54 @@ class _VehiclesPageState extends State<VehiclesPage> {
     }
   }
 
+  Future<void> _deleteVehicle(VehicleModel vehicle) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete vehicle'),
+        content: Text(
+          'Remove "${vehicle.vehicleNumber}" from your vehicle list? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      final result = await _apiService.deleteVehicle(vehicle.id);
+      if (!mounted) return;
+      if (result['success'] == true) {
+        _loadVehicles();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vehicle removed')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['error']?.toString() ?? 'Failed to delete')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Something went wrong')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,13 +192,13 @@ class _VehiclesPageState extends State<VehiclesPage> {
                                     placeholder: (_, __) => const Center(
                                         child: CircularProgressIndicator()),
                                     errorWidget: (_, __, ___) => Icon(
-                                      Icons.directions_car,
+                                      vehicle.iconData,
                                       color: AppTheme.primaryColor,
                                     ),
                                   ),
                                 )
                               : Icon(
-                                  Icons.directions_car,
+                                  vehicle.iconData,
                                   color: AppTheme.primaryColor,
                                   size: 28,
                                 ),
@@ -167,6 +215,12 @@ class _VehiclesPageState extends State<VehiclesPage> {
                           style: TextStyle(
                             color: AppTheme.textColor.withOpacity(0.7),
                           ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.red,
+                          onPressed: () => _deleteVehicle(vehicle),
+                          tooltip: 'Delete',
                         ),
                       ),
                     );

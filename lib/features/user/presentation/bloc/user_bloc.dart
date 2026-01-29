@@ -120,7 +120,6 @@ class UserLoaded extends UserState {
 // BLoC
 class UserBloc extends Bloc<UserEvent, UserState> {
   static const String _visitorsKey = 'visitors_list';
-  static const String _complaintsKey = 'complaints_list';
   final ApiService _apiService = ApiService();
 
   UserBloc() : super(UserInitial()) {
@@ -138,7 +137,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(UserLoading());
     try {
       var visitors = await _getVisitors();
-      var complaints = await _getComplaints();
+      var complaints = await _fetchComplaintsFromApi();
       emit(UserLoaded(visitors: visitors, complaints: complaints));
     } catch (e) {
       emit(UserLoaded(visitors: [], complaints: []));
@@ -273,7 +272,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
-      final complaints = await _getComplaints();
+      final complaints = await _fetchComplaintsFromApi();
       emit(UserLoaded(visitors: visitors, complaints: complaints));
       
       // Navigate to visitor details page (handled in UI)
@@ -292,39 +291,34 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     Emitter<UserState> emit,
   ) async {
     try {
-      final complaints = await _getComplaints();
-      final users = await _getUsers();
-      final user = users.firstWhere(
-        (u) => u.id == event.userId,
-        orElse: () => UserModel(
-          id: '',
-          name: 'Unknown',
-          username: 'unknown',
-          email: '',
-          mobileNumber: '',
-          userType: UserType.user,
-          status: AccountStatus.pending,
-        ),
-      );
-      final newComplaint = ComplaintModel(
-        id: const Uuid().v4(),
-        userId: event.userId,
-        userName: user.name,
-        type: event.type,
+      final response = await _apiService.createComplaint(
+        type: event.type.name,
         description: event.description,
-        status: ComplaintStatus.pending,
-        createdAt: DateTime.now(),
-        block: event.block ?? user.block,
-        floor: event.floor ?? user.floor,
-        roomNumber: event.roomNumber ?? user.roomNumber,
+        block: event.block,
+        floor: event.floor,
+        roomNumber: event.roomNumber,
       );
-      complaints.add(newComplaint);
-      await _saveComplaints(complaints);
-      final visitors = await _getVisitors();
-      emit(UserLoaded(visitors: visitors, complaints: complaints));
+      if (response['success'] == true) {
+        final visitors = await _getVisitors();
+        final complaints = await _fetchComplaintsFromApi();
+        emit(UserLoaded(visitors: visitors, complaints: complaints));
+      }
     } catch (e) {
       // Handle error
     }
+  }
+
+  Future<List<ComplaintModel>> _fetchComplaintsFromApi() async {
+    try {
+      final response = await _apiService.getComplaints();
+      if (response['success'] == true && response['complaints'] != null) {
+        final list = response['complaints'] as List;
+        return list
+            .map((c) => ComplaintModel.fromJson(Map<String, dynamic>.from(c as Map)))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   Future<List<VisitorModel>> _getVisitors() async {
@@ -342,26 +336,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     await prefs.setString(
       _visitorsKey,
       jsonEncode(visitors.map((v) => v.toJson()).toList()),
-    );
-  }
-
-  Future<List<ComplaintModel>> _getComplaints() async {
-    final prefs = await SharedPreferences.getInstance();
-    final complaintsJson = prefs.getString(_complaintsKey);
-    if (complaintsJson != null) {
-      final List<dynamic> complaintsList = jsonDecode(complaintsJson);
-      return complaintsList
-          .map((c) => ComplaintModel.fromJson(c))
-          .toList();
-    }
-    return [];
-  }
-
-  Future<void> _saveComplaints(List<ComplaintModel> complaints) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _complaintsKey,
-      jsonEncode(complaints.map((c) => c.toJson()).toList()),
     );
   }
 

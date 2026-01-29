@@ -8,6 +8,7 @@ import '../../../../../../core/models/visitor_model.dart';
 import '../../../../../../core/routes/app_routes.dart';
 import '../../../../../../core/services/api_service.dart';
 import 'raise_complaint_dialog.dart';
+import 'report_kid_exit_sheet.dart';
 import '../visitors_page.dart';
 import '../vehicles_page.dart';
 import '../family_page.dart';
@@ -192,6 +193,15 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  void _showReportKidExitSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const ReportKidExitSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -277,7 +287,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Invite Guest', Icons.person_add_rounded, _Action.inviteGuest),
       _QuickOption('Cab/Auto', Icons.local_taxi_rounded, _Action.cabAuto),
       _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.allowedDelivery),
-      _QuickOption('Visiting Help', Icons.people_rounded, _Action.comingSoon),
+
       _QuickOption('Call Security', Icons.phone_rounded, _Action.securityList),
       _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
       _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
@@ -285,7 +295,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.dailyHelp),
       _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.vehicles),
       _QuickOption('Help and Support', Icons.support_agent_rounded, _Action.helpDesk),
-      _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.comingSoon),
+      _QuickOption('Kid Exit', Icons.child_care_rounded, _Action.kidExit),
     ];
 
     return LayoutBuilder(
@@ -367,6 +377,9 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.dailyHelp:
         _navigateToDailyHelpList();
         break;
+      case _Action.kidExit:
+        _showReportKidExitSheet();
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
@@ -374,7 +387,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, dailyHelp, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, dailyHelp, kidExit, comingSoon }
 
 class _QuickOption {
   final String title;

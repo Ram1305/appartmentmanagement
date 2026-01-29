@@ -9,6 +9,9 @@ import '../../../../core/app_theme.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/models/visitor_model.dart';
 import '../../../../core/models/block_model.dart';
+import '../../../../core/models/kid_exit_model.dart';
+import '../../../../core/services/api_service.dart';
+import 'package:intl/intl.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/security_bloc.dart';
 
@@ -128,6 +131,11 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                         icon: Icons.verified_user,
                         label: 'Verify Visitor',
                         onTap: () => _showVerifyVisitorSheet(context, state.visitors),
+                      ),
+                      _GridCard(
+                        icon: Icons.child_care_rounded,
+                        label: 'Kid Exits',
+                        onTap: () => _showKidExitsSheet(context, state.kidExits),
                       ),
                     ],
                   ),
@@ -368,6 +376,24 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
         builder: (ctx, scrollController) => _VerifyVisitorSheet(
           visitors: visitors,
           scrollController: scrollController,
+        ),
+      ),
+    );
+  }
+
+  void _showKidExitsSheet(BuildContext context, List<KidExitModel> kidExits) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollController) => _KidExitsSheet(
+          kidExits: kidExits,
+          scrollController: scrollController,
+          onRefresh: () => context.read<SecurityBloc>().add(LoadSecurityDataEvent()),
         ),
       ),
     );
@@ -712,6 +738,271 @@ class _UpcomingVisitorsSheetState extends State<_UpcomingVisitorsSheet> {
                               ],
                             ),
                           ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ————— Bottom sheet: Kid Exits (user–security communication) —————
+class _KidExitsSheet extends StatefulWidget {
+  final List<KidExitModel> kidExits;
+  final ScrollController scrollController;
+  final VoidCallback onRefresh;
+
+  const _KidExitsSheet({
+    required this.kidExits,
+    required this.scrollController,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_KidExitsSheet> createState() => _KidExitsSheetState();
+}
+
+class _KidExitsSheetState extends State<_KidExitsSheet> {
+  final ApiService _apiService = ApiService();
+  final Set<String> _acknowledgedIds = {};
+
+  List<KidExitModel> get _effectiveList {
+    return widget.kidExits.map((e) {
+      if (_acknowledgedIds.contains(e.id)) {
+        return e.copyWith(acknowledgedAt: e.acknowledgedAt ?? DateTime.now());
+      }
+      return e;
+    }).toList();
+  }
+
+  Future<void> _acknowledge(KidExitModel exit) async {
+    if (exit.isAcknowledged || _acknowledgedIds.contains(exit.id)) return;
+    try {
+      final response = await _apiService.acknowledgeKidExit(exit.id);
+      if (mounted && response['success'] == true) {
+        setState(() => _acknowledgedIds.add(exit.id));
+        widget.onRefresh();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${exit.kidName} — acknowledged'),
+            backgroundColor: AppTheme.secondaryColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['error']?.toString() ?? 'Failed to acknowledge'),
+              backgroundColor: AppTheme.errorColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = _effectiveList;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.child_care_rounded, color: AppTheme.primaryColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kid Exits',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textColor,
+                        ),
+                      ),
+                      Text(
+                        'Residents notify when a child is leaving. Acknowledge when seen.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textColor.withOpacity(0.65),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (list.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${list.length} today',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: list.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.child_care_rounded, size: 56, color: AppTheme.textColor.withOpacity(0.25)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No kid exits reported today',
+                          style: TextStyle(fontSize: 14, color: AppTheme.textColor.withOpacity(0.6)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Residents use "Kid Exit" in the app to notify when a child is leaving.',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.5)),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: widget.scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      final e = list[index];
+                      final exitTime = e.exitTime.toLocal();
+                      final timeStr = DateFormat('HH:mm').format(exitTime);
+                      final dateStr = DateFormat('dd MMM').format(exitTime);
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.dividerColor.withOpacity(0.6)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
+                                child: Icon(Icons.person_rounded, color: AppTheme.primaryColor, size: 22),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e.kidName,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.home_rounded, size: 14, color: AppTheme.textColor.withOpacity(0.55)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${e.block}-${e.homeNumber}',
+                                          style: TextStyle(fontSize: 13, color: AppTheme.textColor.withOpacity(0.75)),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Icon(Icons.schedule_rounded, size: 14, color: AppTheme.textColor.withOpacity(0.55)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '$dateStr, $timeStr',
+                                          style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.65)),
+                                        ),
+                                      ],
+                                    ),
+                                    if (e.reporterName != null && e.reporterName!.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Reported by ${e.reporterName}',
+                                        style: TextStyle(fontSize: 11, color: AppTheme.textColor.withOpacity(0.5)),
+                                      ),
+                                    ],
+                                    if (e.note != null && e.note!.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.backgroundColor,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          e.note!,
+                                          style: TextStyle(fontSize: 12, color: AppTheme.textColor.withOpacity(0.8)),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (e.isAcknowledged || _acknowledgedIds.contains(e.id))
+                                Icon(Icons.check_circle_rounded, color: AppTheme.secondaryColor, size: 24)
+                              else
+                                TextButton(
+                                  onPressed: () => _acknowledge(e),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppTheme.primaryColor,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  child: const Text('Acknowledge'),
+                                ),
+                            ],
+                          ),
                         ),
                       );
                     },

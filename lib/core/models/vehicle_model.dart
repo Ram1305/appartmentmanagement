@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 enum VehicleType {
   twoWheeler,
@@ -18,6 +19,18 @@ class VehicleModel extends Equatable {
     required this.vehicleNumber,
     this.imageUrl,
   });
+
+  /// Icon for two wheeler = bike, four wheeler = car, other = other vehicle icon.
+  IconData get iconData {
+    switch (vehicleType) {
+      case 'twoWheeler':
+        return Icons.two_wheeler;
+      case 'fourWheeler':
+        return Icons.directions_car;
+      default:
+        return Icons.local_shipping;
+    }
+  }
 
   String get displayType {
     switch (vehicleType) {

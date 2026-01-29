@@ -1968,6 +1968,28 @@ class ApiService {
     }
   }
 
+  /// Get all subscription plans (history) - admin only, includes inactive.
+  Future<Map<String, dynamic>> getSubscriptionPlansHistory() async {
+    try {
+      final response = await _dio.get(ApiConfig.subscriptionPlansHistory);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'plans': response.data['plans'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get plan history',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> createSubscriptionOrder(String planId) async {
     try {
       final response = await _dio.post(
@@ -2712,6 +2734,54 @@ class ApiService {
         };
       }
     } on DioException catch (e) {
+    String errorMessage = 'Network error';
+
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      errorMessage =
+          'Connection timeout. Please check your internet connection and ensure the server is running.';
+    } else if (e.type == DioExceptionType.connectionError) {
+      errorMessage =
+          'Unable to connect to server. Please check your internet connection and verify the server is running.';
+    } else if (e.response != null) {
+      errorMessage =
+          e.response?.data['error'] ?? e.message ?? 'Network error';
+    } else {
+      errorMessage = e.message ?? 'Network error';
+    }
+
+    return {
+      'success': false,
+      'error': errorMessage,
+    };
+  } catch (e) {
+    return {
+      'success': false,
+      'error': e.toString(),
+    };
+  }
+}
+
+  // Delete vehicle
+  Future<Map<String, dynamic>> deleteVehicle(String vehicleId) async {
+    try {
+      final response = await _dio.delete(
+        ApiConfig.deleteVehicleUrl(vehicleId),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Vehicle deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to delete vehicle',
+        };
+      }
+    } on DioException catch (e) {
       String errorMessage = 'Network error';
 
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -2851,6 +2921,145 @@ class ApiService {
         'success': false,
         'error': e.toString(),
       };
+    }
+  }
+
+  // Delete family member
+  Future<Map<String, dynamic>> deleteFamilyMember(String familyMemberId) async {
+    try {
+      final response = await _dio.delete(
+        ApiConfig.deleteFamilyMemberUrl(familyMemberId),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Family member deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to delete family member',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Kid exit (user–security communication)
+  Future<Map<String, dynamic>> reportKidExit({
+    required String kidName,
+    String? familyMemberId,
+    String? note,
+    DateTime? exitTime,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.reportKidExit,
+        data: {
+          'kidName': kidName.trim(),
+          if (familyMemberId != null && familyMemberId.isNotEmpty) 'familyMemberId': familyMemberId,
+          if (note != null && note.isNotEmpty) 'note': note.trim(),
+          if (exitTime != null) 'exitTime': exitTime.toIso8601String(),
+        },
+      );
+
+      if (response.statusCode == 201 && response.data['kidExit'] != null) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Kid exit reported. Security has been notified.',
+          'kidExit': response.data['kidExit'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to report kid exit',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getKidExits({String? date}) async {
+    try {
+      final queryParams = date != null ? {'date': date} : null;
+      final response = await _dio.get(
+        ApiConfig.getKidExits,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'kidExits': response.data['kidExits'] ?? [],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to get kid exits',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> acknowledgeKidExit(String kidExitId) async {
+    try {
+      final response = await _dio.patch(
+        ApiConfig.kidExitAcknowledgeUrl(kidExitId),
+      );
+
+      if (response.statusCode == 200 && response.data['kidExit'] != null) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Kid exit acknowledged',
+          'kidExit': response.data['kidExit'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to acknowledge',
+        };
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -3339,6 +3548,83 @@ class ApiService {
       return {
         'success': false,
         'error': response.data['error'] ?? 'Failed to update status',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // Complaints
+  Future<Map<String, dynamic>> getComplaints({String? status}) async {
+    try {
+      final path = status != null && (status == 'pending' || status == 'completed')
+          ? '${ApiConfig.complaintsBase}?status=$status'
+          : ApiConfig.complaintsBase;
+      final response = await _dio.get(path);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'complaints': response.data['complaints'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get complaints',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createComplaint({
+    required String type,
+    required String description,
+    String? block,
+    String? floor,
+    String? roomNumber,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'type': type.trim(),
+        'description': description.trim(),
+      };
+      if (block != null) data['block'] = block;
+      if (floor != null) data['floor'] = floor;
+      if (roomNumber != null) data['roomNumber'] = roomNumber;
+      final response = await _dio.post(ApiConfig.complaintsBase, data: data);
+      if (response.statusCode == 201) {
+        return {'success': true, 'complaint': response.data['complaint']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to create complaint',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateComplaintStatus(String complaintId, String status) async {
+    try {
+      final response = await _dio.patch(
+        ApiConfig.complaintStatus(complaintId),
+        data: {'status': status},
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'complaint': response.data['complaint']};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to update complaint status',
       };
     } on DioException catch (e) {
       final msg = e.response?.data['error'] ?? e.message ?? 'Network error';

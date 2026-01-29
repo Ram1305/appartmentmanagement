@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../core/models/visitor_model.dart';
 import '../../../../core/models/block_model.dart';
+import '../../../../core/models/kid_exit_model.dart';
 import '../../../../core/services/api_service.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
@@ -69,17 +70,19 @@ class SecurityLoading extends SecurityState {}
 class SecurityLoaded extends SecurityState {
   final List<VisitorModel> visitors;
   final List<BlockModel> blocks;
+  final List<KidExitModel> kidExits;
   /// Non-null when the last add-visitor API call failed (visitor may still be shown locally).
   final String? lastAddVisitorError;
 
   const SecurityLoaded({
     required this.visitors,
     required this.blocks,
+    this.kidExits = const [],
     this.lastAddVisitorError,
   });
 
   @override
-  List<Object?> get props => [visitors, blocks, lastAddVisitorError];
+  List<Object?> get props => [visitors, blocks, kidExits, lastAddVisitorError];
 }
 
 // BLoC
@@ -99,7 +102,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
   void _onClearSecurityError(ClearSecurityErrorEvent event, Emitter<SecurityState> emit) {
     final current = state;
     if (current is SecurityLoaded && current.lastAddVisitorError != null) {
-      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks));
+      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, kidExits: current.kidExits));
     }
   }
 
@@ -111,6 +114,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
     try {
       List<VisitorModel> visitors = [];
       List<BlockModel> blocks = [];
+      List<KidExitModel> kidExits = [];
 
       // Fetch all visitors from backend (dashboard filters Today / Upcoming / View All client-side)
       final visitorsResponse = await _apiService.getSecurityVisitors();
@@ -136,15 +140,26 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         blocks = await _getBlocks();
       }
 
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks));
+      // Kid exits: security sees all (today by default for dashboard)
+      final now = DateTime.now();
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final kidExitsResponse = await _apiService.getKidExits(date: todayStr);
+      if (kidExitsResponse['success'] == true && kidExitsResponse['kidExits'] != null) {
+        final List<dynamic> list = kidExitsResponse['kidExits'] as List<dynamic>;
+        kidExits = list
+            .map((e) => KidExitModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: kidExits));
     } catch (e) {
       // On error: try local cache for both (no lastAddVisitorError on load)
       try {
         final visitors = await _getVisitors();
         final blocks = await _getBlocks();
-        emit(SecurityLoaded(visitors: visitors, blocks: blocks));
+        emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: []));
       } catch (_) {
-        emit(SecurityLoaded(visitors: [], blocks: []));
+        emit(SecurityLoaded(visitors: [], blocks: [], kidExits: []));
       }
     }
   }
@@ -224,7 +239,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final blocks = await _getBlocks();
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks, lastAddVisitorError: apiError));
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current.kidExits, lastAddVisitorError: apiError));
     } catch (e) {
       // Exception during API or parsing: add visitor locally and surface error
       final current = state;
@@ -259,7 +274,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       );
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks, lastAddVisitorError: 'Could not save to server: ${e.toString()}'));
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current.kidExits, lastAddVisitorError: 'Could not save to server: ${e.toString()}'));
     }
   }
 
@@ -277,14 +292,14 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
         if (idx >= 0) {
           visitors[idx] = visitors[idx].copyWith(approvalStatus: VisitorApprovalStatus.approved);
           await _saveVisitors(visitors);
-          emit(SecurityLoaded(visitors: visitors, blocks: current.blocks, lastAddVisitorError: current.lastAddVisitorError));
+          emit(SecurityLoaded(visitors: visitors, blocks: current.blocks, kidExits: current.kidExits, lastAddVisitorError: current.lastAddVisitorError));
         }
       } else {
         final err = response['error'] as String? ?? 'Could not approve visitor';
-        emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, lastAddVisitorError: err));
+        emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, kidExits: current.kidExits, lastAddVisitorError: err));
       }
     } catch (e) {
-      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, lastAddVisitorError: 'Failed to approve: ${e.toString()}'));
+      emit(SecurityLoaded(visitors: current.visitors, blocks: current.blocks, kidExits: current.kidExits, lastAddVisitorError: 'Failed to approve: ${e.toString()}'));
     }
   }
 

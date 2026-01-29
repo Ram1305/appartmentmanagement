@@ -177,7 +177,7 @@ class ComplaintsTab extends StatelessWidget {
                         // Header Row
                         Row(
                           children: [
-                            // Status Icon
+                            // Category Icon (based on complaint type)
                             Container(
                               width: 56,
                               height: 56,
@@ -186,21 +186,21 @@ class ComplaintsTab extends StatelessWidget {
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    _getStatusColor(complaint.status),
-                                    _getStatusColor(complaint.status).withOpacity(0.7),
+                                    _getCategoryColor(complaint.type),
+                                    _getCategoryColor(complaint.type).withOpacity(0.7),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: _getStatusColor(complaint.status).withOpacity(0.3),
+                                    color: _getCategoryColor(complaint.type).withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
                               child: Icon(
-                                _getStatusIcon(complaint.status),
+                                _getCategoryIcon(complaint.type),
                                 color: Colors.white,
                                 size: 26,
                               ),
@@ -217,7 +217,7 @@ class ComplaintsTab extends StatelessWidget {
                                       vertical: 5,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: _getStatusColor(complaint.status)
+                                      color: _getCategoryColor(complaint.type)
                                           .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -226,7 +226,7 @@ class ComplaintsTab extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
-                                        color: _getStatusColor(complaint.status),
+                                        color: _getCategoryColor(complaint.type),
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -270,41 +270,6 @@ class ComplaintsTab extends StatelessWidget {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // Room Details
-                        if (complaint.block != null ||
-                            complaint.floor != null ||
-                            complaint.roomNumber != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppTheme.primaryColor.withOpacity(0.1),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.home_rounded,
-                                  size: 18,
-                                  color: AppTheme.primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _buildRoomDetails(complaint),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppTheme.textColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
                         const SizedBox(height: 12),
                         // Footer with Date
                         Row(
@@ -318,21 +283,6 @@ class ComplaintsTab extends StatelessWidget {
                             Text(
                               DateFormat('dd MMM yyyy, hh:mm a')
                                   .format(complaint.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textColor.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              Icons.person_rounded,
-                              size: 14,
-                              color: AppTheme.textColor.withOpacity(0.6),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              complaint.userName,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.textColor.withOpacity(0.7),
@@ -363,40 +313,47 @@ class ComplaintsTab extends StatelessWidget {
     switch (status) {
       case ComplaintStatus.pending:
         return AppTheme.accentColor;
-      case ComplaintStatus.inProgress:
+      case ComplaintStatus.approved:
         return AppTheme.primaryColor;
-      case ComplaintStatus.resolved:
+      case ComplaintStatus.completed:
         return AppTheme.secondaryColor;
-      case ComplaintStatus.rejected:
+      case ComplaintStatus.cancelled:
         return AppTheme.errorColor;
     }
   }
 
-  IconData _getStatusIcon(ComplaintStatus status) {
-    switch (status) {
-      case ComplaintStatus.pending:
-        return Icons.pending_rounded;
-      case ComplaintStatus.inProgress:
-        return Icons.work_rounded;
-      case ComplaintStatus.resolved:
-        return Icons.check_circle_rounded;
-      case ComplaintStatus.rejected:
-        return Icons.cancel_rounded;
+  IconData _getCategoryIcon(ComplaintType type) {
+    switch (type) {
+      case ComplaintType.plumbing:
+        return Icons.plumbing_rounded;
+      case ComplaintType.electrical:
+        return Icons.electrical_services_rounded;
+      case ComplaintType.cleaning:
+        return Icons.cleaning_services_rounded;
+      case ComplaintType.maintenance:
+        return Icons.build_rounded;
+      case ComplaintType.security:
+        return Icons.security_rounded;
+      case ComplaintType.other:
+        return Icons.more_horiz_rounded;
     }
   }
 
-  String _buildRoomDetails(ComplaintModel complaint) {
-    final parts = <String>[];
-    if (complaint.block != null && complaint.block!.isNotEmpty) {
-      parts.add('Block ${complaint.block}');
+  Color _getCategoryColor(ComplaintType type) {
+    switch (type) {
+      case ComplaintType.plumbing:
+        return const Color(0xFF2196F3);
+      case ComplaintType.electrical:
+        return const Color(0xFFFF9800);
+      case ComplaintType.cleaning:
+        return const Color(0xFF4CAF50);
+      case ComplaintType.maintenance:
+        return const Color(0xFF9C27B0);
+      case ComplaintType.security:
+        return const Color(0xFFF44336);
+      case ComplaintType.other:
+        return const Color(0xFF757575);
     }
-    if (complaint.floor != null && complaint.floor!.isNotEmpty) {
-      parts.add('Floor ${complaint.floor}');
-    }
-    if (complaint.roomNumber != null && complaint.roomNumber!.isNotEmpty) {
-      parts.add('Room ${complaint.roomNumber}');
-    }
-    return parts.isEmpty ? 'Room details not available' : parts.join(' • ');
   }
 
   void _showRaiseComplaintDialog(BuildContext context, ComplaintType? type) {

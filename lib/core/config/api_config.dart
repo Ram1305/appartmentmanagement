@@ -107,11 +107,13 @@ class ApiConfig {
   static String get vehiclesBase => '$baseUrl/vehicles';
   static String get getVehicles => vehiclesBase;
   static String get addVehicle => vehiclesBase;
+  static String deleteVehicleUrl(String id) => '$vehiclesBase/$id';
 
   // Family member endpoints
   static String get familyMembersBase => '$baseUrl/family-members';
   static String get getFamilyMembers => familyMembersBase;
   static String get addFamilyMember => familyMembersBase;
+  static String deleteFamilyMemberUrl(String id) => '$familyMembersBase/$id';
 
   // Visitor endpoints (security: all visitors / today)
   static String get visitorsBase => '$baseUrl/visitors';
@@ -130,9 +132,20 @@ class ApiConfig {
   static String supportSendMessage(String ticketId) => '$supportTicketsBase/$ticketId/messages';
   static String supportTicketStatus(String id) => '$supportTicketsBase/$id/status';
 
+  // Complaints endpoints
+  static String get complaintsBase => '$baseUrl/complaints';
+  static String complaintStatus(String id) => '$complaintsBase/$id/status';
+
+  // Kid exit endpoints (user–security communication)
+  static String get kidExitsBase => '$baseUrl/kid-exits';
+  static String get reportKidExit => kidExitsBase;
+  static String get getKidExits => kidExitsBase;
+  static String kidExitAcknowledgeUrl(String id) => '$kidExitsBase/$id/acknowledge';
+
   // Subscription endpoints (admin subscription, app-active for user/security)
   static String get subscriptionBase => '$baseUrl/subscription';
   static String get subscriptionPlans => '$subscriptionBase/plans';
+  static String get subscriptionPlansHistory => '$subscriptionBase/plans/history';
   static String get subscriptionCreateOrder => '$subscriptionBase/create-order';
   static String get subscriptionVerify => '$subscriptionBase/verify';
   static String get subscriptionMy => '$subscriptionBase/my';

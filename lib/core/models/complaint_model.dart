@@ -11,9 +11,9 @@ enum ComplaintType {
 
 enum ComplaintStatus {
   pending,
-  inProgress,
-  resolved,
-  rejected,
+  approved,
+  completed,
+  cancelled,
 }
 
 class ComplaintModel extends Equatable {
@@ -68,8 +68,8 @@ class ComplaintModel extends Equatable {
   factory ComplaintModel.fromJson(Map<String, dynamic> json) {
     return ComplaintModel(
       id: json['id'] as String,
-      userId: json['userId'] as String,
-      userName: json['userName'] as String,
+      userId: (json['userId'] ?? '').toString(),
+      userName: (json['userName'] ?? '').toString(),
       type: ComplaintType.values.firstWhere(
         (e) => e.name == json['type'],
         orElse: () => ComplaintType.other,

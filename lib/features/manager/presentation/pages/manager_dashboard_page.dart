@@ -112,7 +112,7 @@ class _OverviewTab extends StatelessWidget {
           final pendingComplaints = state.complaints.where((c) => c.status == ComplaintStatus.pending).length;
           final securityStaff = state.users.where((u) => u.userType == UserType.security).length;
           final totalComplaints = state.complaints.length;
-          final resolvedComplaints = state.complaints.where((c) => c.status == ComplaintStatus.resolved).length;
+          final resolvedComplaints = state.complaints.where((c) => c.status == ComplaintStatus.completed).length;
           
           return SingleChildScrollView(
             padding: EdgeInsets.only(
@@ -762,15 +762,15 @@ class _ComplaintsTab extends StatelessWidget {
                     iconSize: 20,
                     itemBuilder: (context) => [
                       const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.inProgress,
+                        value: ComplaintStatus.approved,
                         child: Text('Mark In Progress', style: TextStyle(fontSize: 13)),
                       ),
                       const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.resolved,
+                        value: ComplaintStatus.completed,
                         child: Text('Mark Resolved', style: TextStyle(fontSize: 13)),
                       ),
                       const PopupMenuItem<ComplaintStatus>(
-                        value: ComplaintStatus.rejected,
+                        value: ComplaintStatus.cancelled,
                         child: Text('Reject', style: TextStyle(fontSize: 13)),
                       ),
                     ],
@@ -797,11 +797,11 @@ class _ComplaintsTab extends StatelessWidget {
     switch (status) {
       case ComplaintStatus.pending:
         return AppTheme.accentColor;
-      case ComplaintStatus.inProgress:
+      case ComplaintStatus.approved:
         return AppTheme.primaryColor;
-      case ComplaintStatus.resolved:
+      case ComplaintStatus.completed:
         return AppTheme.secondaryColor;
-      case ComplaintStatus.rejected:
+      case ComplaintStatus.cancelled:
         return AppTheme.errorColor;
     }
   }
@@ -810,11 +810,11 @@ class _ComplaintsTab extends StatelessWidget {
     switch (status) {
       case ComplaintStatus.pending:
         return Icons.pending;
-      case ComplaintStatus.inProgress:
+      case ComplaintStatus.approved:
         return Icons.work;
-      case ComplaintStatus.resolved:
+      case ComplaintStatus.completed:
         return Icons.check_circle;
-      case ComplaintStatus.rejected:
+      case ComplaintStatus.cancelled:
         return Icons.cancel;
     }
   }

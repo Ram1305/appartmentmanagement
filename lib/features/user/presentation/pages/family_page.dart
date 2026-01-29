@@ -58,6 +58,54 @@ class _FamilyPageState extends State<FamilyPage> {
     }
   }
 
+  Future<void> _deleteFamilyMember(FamilyMemberModel member) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete family member'),
+        content: Text(
+          'Remove "${member.name}" from your family list? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      final result = await _apiService.deleteFamilyMember(member.id);
+      if (!mounted) return;
+      if (result['success'] == true) {
+        _loadFamilyMembers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Family member removed')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['error']?.toString() ?? 'Failed to delete')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Something went wrong')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,6 +224,12 @@ class _FamilyPageState extends State<FamilyPage> {
                                 ),
                               ),
                           ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.red,
+                          onPressed: () => _deleteFamilyMember(member),
+                          tooltip: 'Delete',
                         ),
                       ),
                     );

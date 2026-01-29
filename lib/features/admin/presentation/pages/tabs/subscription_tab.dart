@@ -173,6 +173,144 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
     }
   }
 
+  Future<void> _showPlanHistory(BuildContext context) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        title: Text('Plan History'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+    );
+    try {
+      final res = await _api.getSubscriptionPlansHistory();
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      if (res['success'] != true || res['plans'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['error']?.toString() ?? 'Failed to load plan history'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final list = (res['plans'] as List)
+          .map((e) => SubscriptionPlanModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Plan History'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: list.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: Text('No plans in history.')),
+                  )
+                : SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: list.asMap().entries.map((entry) {
+                        final plan = entry.value;
+                        final colorStr = plan.color;
+                        final color = colorStr != null && colorStr.isNotEmpty
+                            ? _parseColor(colorStr)
+                            : _planColors[entry.key % _planColors.length];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 1,
+                          color: color.withOpacity(0.6),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        plan.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Chip(
+                                      label: Text(
+                                        plan.isActive ? 'Active' : 'Inactive',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      backgroundColor: plan.isActive
+                                          ? Colors.green.shade100
+                                          : Colors.grey.shade300,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '₹${plan.amount.toStringAsFixed(0)} · ${plan.daysValidity} days',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                if (plan.description.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    plan.description,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                                if (plan.createdAt != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Created: ${_formatDate(plan.createdAt!)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
@@ -250,16 +388,31 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() => _showPlans = !_showPlans);
-                  if (_showPlans && !_loadingPlans) _loadPlans();
-                },
-                icon: Icon(_showPlans ? Icons.expand_less : Icons.add_circle_outline),
-                label: Text(_showPlans ? 'Hide plans' : 'Add subscription'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _showPlans = !_showPlans);
+                        if (_showPlans && !_loadingPlans) _loadPlans();
+                      },
+                      icon: Icon(_showPlans ? Icons.expand_less : Icons.add_circle_outline),
+                      label: Text(_showPlans ? 'Hide plans' : 'Add subscription'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _showPlanHistory(context),
+                    icon: const Icon(Icons.history, size: 20),
+                    label: const Text('Plan History'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               if (_showPlans) ...[
