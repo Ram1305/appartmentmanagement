@@ -1,7 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const cron = require('node-cron');
 const connectDB = require('./config/database');
 const securityHeaders = require('./middleware/securityHeaders');
 const Admin = require('./models/Admin');
@@ -12,8 +11,9 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-// Daily cron: expire admin subscriptions at 00:05
-cron.schedule('5 0 * * *', async () => {
+// Run every hour: expire admin subscriptions whose subscriptionEndsAt has passed
+const ONE_HOUR_MS = 60 * 60 * 1000;
+setInterval(async () => {
   try {
     const result = await Admin.updateMany(
       { subscriptionEndsAt: { $lte: new Date() } },
@@ -25,7 +25,7 @@ cron.schedule('5 0 * * *', async () => {
   } catch (err) {
     console.error('[Cron] Subscription expiry error:', err);
   }
-});
+}, ONE_HOUR_MS);
 
 const app = express();
 
@@ -36,7 +36,9 @@ app.use(securityHeaders);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
+  'http://localhost:7000',
   'http://127.0.0.1:5000',
+  'http://127.0.0.1:7000',
   'http://192.168.29.61:5000',
   'http://192.168.29.61',
   'http://10.21.175.15:5000', // Previous IP

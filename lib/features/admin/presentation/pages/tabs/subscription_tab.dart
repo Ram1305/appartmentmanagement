@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../../../../core/config/api_config.dart';
 import '../../../../../core/models/subscription_plan_model.dart';
 import '../../../../../core/models/user_model.dart';
 import '../../../../../core/services/api_service.dart';
@@ -58,7 +59,7 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
           _loadingPlans = false;
         });
       } else {
-        setState(() => _loadingPlans = false);
+        if (mounted) setState(() => _loadingPlans = false);
       }
     } catch (_) {
       if (mounted) setState(() => _loadingPlans = false);
@@ -150,7 +151,7 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
     _pendingOrderId = orderId;
     _pendingPlanId = plan.id;
     final options = {
-      'key': keyId.isNotEmpty ? keyId : 'rzp_test_placeholder',
+      'key': keyId.isNotEmpty ? keyId : ApiConfig.razorpayKey,
       'amount': amount,
       'order_id': orderId,
       'name': 'Apartment Management',
@@ -252,7 +253,7 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
               ElevatedButton.icon(
                 onPressed: () {
                   setState(() => _showPlans = !_showPlans);
-                  if (_showPlans && _plans.isEmpty && !_loadingPlans) _loadPlans();
+                  if (_showPlans && !_loadingPlans) _loadPlans();
                 },
                 icon: Icon(_showPlans ? Icons.expand_less : Icons.add_circle_outline),
                 label: Text(_showPlans ? 'Hide plans' : 'Add subscription'),
@@ -271,9 +272,21 @@ class _SubscriptionTabState extends State<SubscriptionTab> {
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Center(
-                      child: Text(
-                        'No plans available. Contact support.',
-                        style: TextStyle(color: Colors.grey[600]),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'No plans available from the server.',
+                            style: TextStyle(color: Colors.grey[600]),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Run backend seed: node backend/scripts/seedSubscriptionPlans.js',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   )

@@ -64,6 +64,9 @@ class ApiConfig {
   static String get setMaintenance => maintenanceBase;
   static String get updateMaintenance => maintenanceBase; // Use with /:id
 
+  // Razorpay (front-end key for checkout)
+  static const String razorpayKey = 'rzp_test_S8OG5QwdE7JwGw';
+
   // Payment endpoints
   static String get paymentsBase => '$baseUrl/payments';
   static String get getAllPayments => paymentsBase;

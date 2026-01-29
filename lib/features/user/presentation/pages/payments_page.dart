@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../../core/app_theme.dart';
+import '../../../../core/config/api_config.dart';
 import '../../../../core/models/payment_model.dart';
 import '../../../../core/services/api_service.dart';
 
@@ -132,7 +133,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
     _payingPaymentId = p.id;
     final options = {
-      'key': keyId.isNotEmpty ? keyId : 'rzp_test_placeholder',
+      'key': keyId.isNotEmpty ? keyId : ApiConfig.razorpayKey,
       'amount': amount,
       'order_id': orderId,
       'name': 'Apartment Management',
