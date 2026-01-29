@@ -75,7 +75,40 @@ const getVehiclesByUser = async (req, res) => {
   }
 };
 
+// @desc    Delete vehicle
+// @route   DELETE /api/vehicles/:id
+// @access  Private (User - own vehicle only)
+const deleteVehicle = async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        error: 'Vehicle not found',
+      });
+    }
+    if (vehicle.user.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to delete this vehicle',
+      });
+    }
+    await Vehicle.findByIdAndDelete(req.params.id);
+    res.json({
+      success: true,
+      message: 'Vehicle deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete vehicle error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 module.exports = {
   createVehicle,
   getVehiclesByUser,
+  deleteVehicle,
 };

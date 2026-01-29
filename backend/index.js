@@ -92,6 +92,7 @@ app.use('/api/amenities', require('./routes/amenityRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
+app.use('/api/kid-exits', require('./routes/kidExitRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

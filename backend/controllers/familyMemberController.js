@@ -76,7 +76,40 @@ const getFamilyMembersByUser = async (req, res) => {
   }
 };
 
+// @desc    Delete family member
+// @route   DELETE /api/family-members/:id
+// @access  Private (User - own family member only)
+const deleteFamilyMember = async (req, res) => {
+  try {
+    const familyMember = await FamilyMember.findById(req.params.id);
+    if (!familyMember) {
+      return res.status(404).json({
+        success: false,
+        error: 'Family member not found',
+      });
+    }
+    if (familyMember.user.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to delete this family member',
+      });
+    }
+    await FamilyMember.findByIdAndDelete(req.params.id);
+    res.json({
+      success: true,
+      message: 'Family member deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete family member error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 module.exports = {
   createFamilyMember,
   getFamilyMembersByUser,
+  deleteFamilyMember,
 };
