@@ -83,10 +83,14 @@ const createOrder = async (req, res) => {
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
+      // Razorpay receipt must be <= 40 chars; planId/adminId are 24-char ObjectIds
+      const planStr = String(planId).slice(-12);
+      const adminStr = String(adminId).slice(-12);
+      const receipt = `sub_${planStr}_${adminStr}`.slice(0, 40);
       const order = await razorpay.orders.create({
         amount: amountPaise,
         currency: 'INR',
-        receipt: `sub_${planId}_${adminId}`,
+        receipt,
       });
       orderId = order.id;
     } else {
