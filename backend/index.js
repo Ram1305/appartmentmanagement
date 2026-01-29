@@ -91,6 +91,7 @@ app.use('/api/ads', require('./routes/adRoutes'));
 app.use('/api/amenities', require('./routes/amenityRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+app.use('/api/complaints', require('./routes/complaintRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {
