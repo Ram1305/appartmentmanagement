@@ -37,7 +37,7 @@ class _GuardConversationsPageState extends State<GuardConversationsPage> {
     // Initialize WebSocket connection
     WebSocketService().connect(
       token: widget.token,
-      odId: widget.odId,
+      userId: widget.odId,
       userType: widget.userType,
     );
 

@@ -72,18 +72,23 @@ conversationSchema.virtual('user', {
   justOne: true,
 });
 
-// Static method to find or create conversation
+// Static method to find or create conversation (atomic to avoid E11000 race condition)
 conversationSchema.statics.findOrCreate = async function (securityId, userId) {
-  let conversation = await this.findOne({ securityId, userId });
-
-  if (!conversation) {
-    conversation = await this.create({
-      securityId,
-      userId,
-      lastMessageAt: new Date(),
-    });
-  }
-
+  const conversation = await this.findOneAndUpdate(
+    { securityId, userId },
+    {
+      $setOnInsert: {
+        securityId,
+        userId,
+        lastMessage: '',
+        lastMessageAt: new Date(),
+        unreadCountSecurity: 0,
+        unreadCountUser: 0,
+        isActive: true,
+      },
+    },
+    { new: true, upsert: true }
+  );
   return conversation;
 };
 
