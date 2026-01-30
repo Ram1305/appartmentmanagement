@@ -291,7 +291,6 @@ class _HomeTabState extends State<HomeTab> {
 
       _QuickOption('Call Security', Icons.phone_rounded, _Action.securityList),
       _QuickOption('Message Guard', Icons.message_rounded, _Action.messageGuard),
-      _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
       _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.dailyHelp),
       _QuickOption('My Vehicles', Icons.directions_car_rounded, _Action.vehicles),
@@ -301,11 +300,12 @@ class _HomeTabState extends State<HomeTab> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = 4;
-        final spacing = 8.0;
+        const crossAxisCount = 4;
+        const spacing = 10.0;
         final availableWidth = constraints.maxWidth;
-        final itemWidth = (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
-        final itemHeight = itemWidth * 1.1; // Slightly taller for better content fit
+        final totalSpacing = spacing * (crossAxisCount - 1);
+        final itemWidth = (availableWidth - totalSpacing) / crossAxisCount;
+        final itemHeight = itemWidth * 1.15; // Optimal ratio for content
         
         return GridView.builder(
           shrinkWrap: true,
@@ -440,41 +440,65 @@ class _QuickOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 2,
-      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 3,
+      shadowColor: Colors.black.withOpacity(0.15),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
+                flex: 3,
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTheme.primaryColor.withOpacity(0.15),
+                        AppTheme.primaryColor.withOpacity(0.08),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      width: 1,
+                    ),
                   ),
-                  child: Icon(icon, color: AppTheme.primaryColor, size: 22),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Icon(
+                      icon,
+                      color: AppTheme.primaryColor,
+                      size: 26,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
               Flexible(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textColor,
-                    height: 1.2,
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textColor,
+                      height: 1.15,
+                      letterSpacing: -0.1,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

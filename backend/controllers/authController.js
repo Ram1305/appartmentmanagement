@@ -349,7 +349,7 @@ const loginUser = async (req, res) => {
       const end = new Date(user.subscriptionEndsAt).getTime();
       userPayload.subscriptionStatus = !!user.subscriptionStatus && end > now;
       userPayload.subscriptionEndsAt = user.subscriptionEndsAt;
-      userPayload.daysLeft = end <= now ? 0 : Math.ceil((end - now) / (24 * 60 * 60 * 1000));
+      userPayload.daysLeft = end <= now ? 0 : Math.floor((end - now) / (24 * 60 * 60 * 1000));
     } else if (foundModelType === 'admin') {
       userPayload.subscriptionStatus = false;
       userPayload.subscriptionEndsAt = null;
@@ -697,7 +697,7 @@ const getCurrentUser = async (req, res) => {
       const end = new Date(user.subscriptionEndsAt).getTime();
       userPayload.subscriptionStatus = !!user.subscriptionStatus && end > now;
       userPayload.subscriptionEndsAt = user.subscriptionEndsAt;
-      userPayload.daysLeft = end <= now ? 0 : Math.ceil((end - now) / (24 * 60 * 60 * 1000));
+      userPayload.daysLeft = end <= now ? 0 : Math.floor((end - now) / (24 * 60 * 60 * 1000));
     } else if (user.userType === 'admin') {
       userPayload.subscriptionStatus = false;
       userPayload.subscriptionEndsAt = null;

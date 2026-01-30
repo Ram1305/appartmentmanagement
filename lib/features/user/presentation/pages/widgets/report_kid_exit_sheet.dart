@@ -64,14 +64,91 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
     }
   }
 
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter the child\'s name';
+    }
+    
+    // Security: Check for valid name format (letters, spaces, hyphens, apostrophes only)
+    final nameRegex = RegExp(r"^[a-zA-Z\s\-'\.]+$");
+    if (!nameRegex.hasMatch(value.trim())) {
+      return 'Name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+    
+    // Security: Check minimum and maximum length
+    if (value.trim().length < 2) {
+      return 'Name must be at least 2 characters';
+    }
+    if (value.trim().length > 50) {
+      return 'Name must not exceed 50 characters';
+    }
+    
+    return null;
+  }
+
+  String? _validateNote(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Note is optional
+    }
+    
+    // Security: Check maximum length
+    if (value.trim().length > 200) {
+      return 'Note must not exceed 200 characters';
+    }
+    
+    // Security: Check for potentially harmful content
+    final dangerousPatterns = ['<script', 'javascript:', 'onerror=', 'onclick='];
+    final lowerValue = value.toLowerCase();
+    for (final pattern in dangerousPatterns) {
+      if (lowerValue.contains(pattern)) {
+        return 'Note contains invalid characters';
+      }
+    }
+    
+    return null;
+  }
+
   Future<void> _submit() async {
+    // Validate form
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
     final name = _nameController.text.trim();
-    if (name.isEmpty) {
+    final nameValidation = _validateName(name);
+    if (nameValidation != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter the child\'s name'),
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(nameValidation)),
+            ],
+          ),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    final note = _noteController.text.trim();
+    final noteValidation = _validateNote(note);
+    if (noteValidation != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(noteValidation)),
+            ],
+          ),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
       return;
@@ -82,7 +159,7 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
       final response = await _apiService.reportKidExit(
         kidName: name,
         familyMemberId: _selectedChild?.id,
-        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+        note: note.isEmpty ? null : note,
       );
 
       if (!mounted) return;
@@ -94,26 +171,44 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
-                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     response['message'] as String? ?? 'Security notified. Kid exit reported.',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
             ),
             backgroundColor: AppTheme.secondaryColor,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['error']?.toString() ?? 'Failed to report'),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(response['error']?.toString() ?? 'Failed to report'),
+                ),
+              ],
+            ),
             backgroundColor: AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -122,9 +217,18 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
         setState(() => _submitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong: ${e.toString()}'),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Something went wrong: ${e.toString()}'),
+                ),
+              ],
+            ),
             backgroundColor: AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -134,15 +238,22 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).padding.bottom + 20,
+        left: 24,
+        right: 24,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 24,
       ),
       child: Form(
         key: _formKey,
@@ -151,161 +262,377 @@ class _ReportKidExitSheetState extends State<ReportKidExitSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Drag handle
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 48,
+                  height: 5,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.child_care_rounded,
-                      size: 28,
-                      color: AppTheme.primaryColor,
-                    ),
+              const SizedBox(height: 24),
+              // Header with gradient background
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Report Kid Exit',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textColor,
-                          ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withOpacity(0.8),
+                          ],
                         ),
-                        const SizedBox(height: 4),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.child_care_rounded,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Report Kid Exit',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textColor,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Notify security when a child is leaving',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textColor.withOpacity(0.65),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              if (_loading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        const CircularProgressIndicator(color: AppTheme.primaryColor),
+                        const SizedBox(height: 16),
                         Text(
-                          'Notify security when a child is leaving the premises',
+                          'Loading family members...',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textColor.withOpacity(0.7),
+                            color: AppTheme.textColor.withOpacity(0.6),
+                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
                 )
               else ...[
-                const Text(
-                  'Who is exiting?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textColor,
+                // Security badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.secondaryColor.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                if (_children.isNotEmpty) ...[
-                  Row(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: DropdownButtonFormField<FamilyMemberModel?>(
-                          value: _useCustomName ? null : _selectedChild,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                          hint: const Text('Select child'),
-                          items: [
-                            ..._children.map((c) => DropdownMenuItem(
-                                  value: c,
-                                  child: Text(c.name),
-                                )),
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('Other (type name)'),
-                            ),
-                          ],
-                          onChanged: (v) {
-                            setState(() {
-                              _selectedChild = v;
-                              _useCustomName = v == null;
-                              if (v != null) {
-                                _nameController.text = v.name;
-                              } else {
-                                _nameController.clear();
-                              }
-                            });
-                          },
+                      Icon(
+                        Icons.shield_rounded,
+                        size: 16,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Secure & Encrypted',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.secondaryColor,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Who is exiting?',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textColor,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_children.isNotEmpty) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: DropdownButtonFormField<FamilyMemberModel?>(
+                      value: _useCustomName ? null : _selectedChild,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        prefixIcon: Icon(
+                          Icons.family_restroom_rounded,
+                          color: AppTheme.primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                      hint: const Text('Select from family members'),
+                      items: [
+                        ..._children.map((c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                c.name,
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            )),
+                        DropdownMenuItem(
+                          value: null,
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_rounded, size: 18, color: AppTheme.primaryColor),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Other (type name)',
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        setState(() {
+                          _selectedChild = v;
+                          _useCustomName = v == null;
+                          if (v != null) {
+                            _nameController.text = v.name;
+                          } else {
+                            _nameController.clear();
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: _children.isNotEmpty ? 'Name (or edit above)' : 'Child\'s name',
-                    hintText: 'Enter name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    labelText: _children.isNotEmpty ? 'Child\'s Name' : 'Child\'s Name',
+                    hintText: 'Enter full name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    helperText: 'Required • 2-50 characters',
+                    helperStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                   textCapitalization: TextCapitalization.words,
+                  validator: _validateName,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _noteController,
                   decoration: InputDecoration(
-                    labelText: 'Note (optional)',
-                    hintText: 'e.g. Going to school, pickup by 4 PM',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.note_rounded),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    labelText: 'Additional Note (Optional)',
+                    hintText: 'e.g., Going to school, pickup by 4 PM',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    prefixIcon: Icon(
+                      Icons.note_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    helperText: 'Optional • Max 200 characters',
+                    helperStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
-                  maxLines: 2,
+                  maxLines: 3,
+                  maxLength: 200,
                   textCapitalization: TextCapitalization.sentences,
+                  validator: _validateNote,
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  height: 50,
+                Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTheme.primaryColor,
+                        AppTheme.primaryColor.withOpacity(0.85),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     child: _submitting
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
                           )
-                        : const Row(
+                        : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.send_rounded, size: 20),
-                              SizedBox(width: 8),
-                              Text('Notify Security', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.send_rounded, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Notify Security',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 17,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
                             ],
                           ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Info text
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.blue[200]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 20,
+                        color: Colors.blue[700],
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Security will be notified immediately about the child exit',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[900],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

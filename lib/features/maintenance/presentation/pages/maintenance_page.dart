@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 
@@ -41,10 +42,14 @@ class MaintenancePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.construction_rounded,
-                    size: 80,
-                    color: Colors.white.withOpacity(0.95),
+                  child: SvgPicture.asset(
+                    'assets/maintance.svg',
+                    width: 80,
+                    height: 80,
+                    colorFilter: ColorFilter.mode(
+                      Colors.white.withOpacity(0.95),
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),

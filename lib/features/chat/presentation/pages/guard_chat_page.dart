@@ -34,6 +34,13 @@ class GuardChatPage extends StatefulWidget {
 class _GuardChatPageState extends State<GuardChatPage> {
   final ScrollController _scrollController = ScrollController();
   String? _currentConversationId;
+  GuardChatBloc? _guardChatBloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _guardChatBloc ??= context.read<GuardChatBloc>();
+  }
 
   @override
   void initState() {
@@ -78,8 +85,8 @@ class _GuardChatPageState extends State<GuardChatPage> {
 
   @override
   void dispose() {
-    if (_currentConversationId != null) {
-      context.read<GuardChatBloc>().add(
+    if (_currentConversationId != null && _guardChatBloc != null) {
+      _guardChatBloc!.add(
             LeaveConversation(conversationId: _currentConversationId!),
           );
     }

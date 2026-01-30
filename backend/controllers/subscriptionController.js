@@ -11,7 +11,8 @@ const getDaysLeft = (subscriptionEndsAt) => {
   const now = new Date();
   const end = new Date(subscriptionEndsAt);
   if (end <= now) return 0;
-  return Math.ceil((end - now) / (24 * 60 * 60 * 1000));
+  // Use floor so "days left" = full 24h periods (e.g. 29.2 days → 29, not 30)
+  return Math.floor((end - now) / (24 * 60 * 60 * 1000));
 };
 
 const defaultPlans = [

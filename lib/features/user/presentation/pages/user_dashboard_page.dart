@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/app_theme.dart';
 import '../../../../core/routes/app_routes.dart';
@@ -39,6 +40,20 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             drawer: _buildDrawer(context, authState.user),
             appBar: AppBar(
               title: Text(_getAppBarTitle(_currentIndex)),
+              actions: [
+                IconButton(
+                  icon: SvgPicture.asset(
+                    'assets/notification.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).appBarTheme.iconTheme?.color ?? Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  onPressed: () {},
+                ),
+              ],
             ),
             body: IndexedStack(
               index: _currentIndex,

@@ -44,6 +44,8 @@ flutter:
     - assets/appicon.png
     - assets/splashicon.png
     - assets/waiting.svg
+    - assets/notification.svg
+    - assets/maintance.svg
 
 flutter_launcher_icons:
   android: true

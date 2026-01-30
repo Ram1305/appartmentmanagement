@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/app_theme.dart';
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/services/api_service.dart';
@@ -82,29 +83,9 @@ class _GuardConversationsPageState extends State<GuardConversationsPage> {
       actions: [
         BlocBuilder<GuardChatBloc, GuardChatState>(
           builder: (context, state) {
-            if (state.totalUnreadCount > 0) {
-              return Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    state.totalUnreadCount > 99
-                        ? '99+'
-                        : '${state.totalUnreadCount}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              );
-            }
-            return const SizedBox.shrink();
+            return _NotificationIconWithBadge(
+              unreadCount: state.totalUnreadCount,
+            );
           },
         ),
       ],
@@ -419,5 +400,80 @@ class _GuardConversationsPageState extends State<GuardConversationsPage> {
         _chatBloc.add(const RefreshConversations());
       });
     }
+  }
+}
+
+/// Notification bell icon with unread count badge for Messages app bar.
+/// Works for both guard and user side (same GuardConversationsPage).
+class _NotificationIconWithBadge extends StatelessWidget {
+  final int unreadCount;
+
+  const _NotificationIconWithBadge({required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context) {
+    const double iconSize = 24.0;
+    const String assetPath = 'assets/notification.svg';
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: IconButton(
+        onPressed: () {
+          // Optional: open notifications or mark as read
+        },
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 40,
+          minHeight: 40,
+        ),
+        icon: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            SvgPicture.asset(
+              assetPath,
+              width: iconSize,
+              height: iconSize,
+              colorFilter: ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                top: -10,
+                right: -8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.primaryColor,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      unreadCount > 99 ? '99+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
