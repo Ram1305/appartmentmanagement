@@ -7,6 +7,7 @@ import '../../../../../../core/models/user_model.dart';
 import '../../../../../../core/models/visitor_model.dart';
 import '../../../../../../core/routes/app_routes.dart';
 import '../../../../../../core/services/api_service.dart';
+import '../../../../chat/presentation/pages/guard_conversations_page.dart';
 import 'raise_complaint_dialog.dart';
 import 'report_kid_exit_sheet.dart';
 import '../visitors_page.dart';
@@ -289,7 +290,7 @@ class _HomeTabState extends State<HomeTab> {
       _QuickOption('Allowed Delivery', Icons.delivery_dining_rounded, _Action.allowedDelivery),
 
       _QuickOption('Call Security', Icons.phone_rounded, _Action.securityList),
-      _QuickOption('Message Guard', Icons.message_rounded, _Action.comingSoon),
+      _QuickOption('Message Guard', Icons.message_rounded, _Action.messageGuard),
       _QuickOption('My Pass', Icons.badge_rounded, _Action.comingSoon),
       _QuickOption('My Family', Icons.family_restroom_rounded, _Action.family),
       _QuickOption('My Daily Help', Icons.cleaning_services_rounded, _Action.dailyHelp),
@@ -380,14 +381,42 @@ class _HomeTabState extends State<HomeTab> {
       case _Action.kidExit:
         _showReportKidExitSheet();
         break;
+      case _Action.messageGuard:
+        _navigateToMessageGuard();
+        break;
       case _Action.comingSoon:
         _navigateToComingSoon(o.title);
         break;
     }
   }
+
+  Future<void> _navigateToMessageGuard() async {
+    final token = await _apiService.getToken();
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please login again')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GuardConversationsPage(
+            token: token,
+            odId: widget.user.id,
+            userType: 'user',
+          ),
+        ),
+      );
+    }
+  }
 }
 
-enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, dailyHelp, kidExit, comingSoon }
+enum _Action { home, complaints, raiseAlert, gateApproval, inviteGuest, vehicles, family, securityList, amenities, payments, helpDesk, cabAuto, allowedDelivery, dailyHelp, kidExit, messageGuard, comingSoon }
 
 class _QuickOption {
   final String title;

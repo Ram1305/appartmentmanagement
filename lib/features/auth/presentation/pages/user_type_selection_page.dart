@@ -98,13 +98,13 @@ class UserTypeSelectionPage extends StatelessWidget {
                         color: Colors.red.shade400,
                         onTap: () => _navigateToLogin(context, UserType.admin),
                       ),
-                      _UserTypeOption(
-                        icon: Icons.business_center,
-                        title: 'Manager',
-                        subtitle: 'Manager Access',
-                        color: Colors.orange.shade400,
-                        onTap: () => _navigateToLogin(context, UserType.manager),
-                      ),
+                      // _UserTypeOption(
+                      //   icon: Icons.business_center,
+                      //   title: 'Manager',
+                      //   subtitle: 'Manager Access',
+                      //   color: Colors.orange.shade400,
+                      //   onTap: () => _navigateToLogin(context, UserType.manager),
+                      // ),
                       _UserTypeOption(
                         icon: Icons.person,
                         title: 'User',

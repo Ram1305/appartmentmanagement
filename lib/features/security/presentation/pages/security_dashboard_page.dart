@@ -13,6 +13,7 @@ import '../../../../core/models/kid_exit_model.dart';
 import '../../../../core/services/api_service.dart';
 import 'package:intl/intl.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../chat/presentation/pages/guard_conversations_page.dart';
 import '../bloc/security_bloc.dart';
 
 class SecurityDashboardPage extends StatefulWidget {
@@ -136,6 +137,11 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
                         icon: Icons.child_care_rounded,
                         label: 'Kid Exits',
                         onTap: () => _showKidExitsSheet(context, state.kidExits),
+                      ),
+                      _GridCard(
+                        icon: Icons.message_rounded,
+                        label: 'Messages',
+                        onTap: () => _navigateToMessages(),
                       ),
                     ],
                   ),
@@ -309,6 +315,50 @@ class _SecurityDashboardPageState extends State<SecurityDashboardPage> {
         },
       ),
     );
+  }
+
+  Future<void> _navigateToMessages() async {
+    final apiService = ApiService();
+    final token = await apiService.getToken();
+    
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please login again')),
+        );
+      }
+      return;
+    }
+
+    // Get user ID from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    String odId = '';
+    
+    if (authState is AuthAuthenticated) {
+      odId = authState.user.id;
+    }
+
+    if (odId.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to get user information')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GuardConversationsPage(
+            token: token,
+            odId: odId,
+            userType: 'security',
+          ),
+        ),
+      );
+    }
   }
 
   void _showAddVisitorSheet(BuildContext context, List<BlockModel> blocks) {

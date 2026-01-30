@@ -3633,4 +3633,238 @@ class ApiService {
       return {'success': false, 'error': e.toString()};
     }
   }
+
+  // ============== Guard Message / Chat API Methods ==============
+
+  /// Get all conversations for the logged-in user
+  Future<Map<String, dynamic>> getGuardConversations() async {
+    try {
+      final response = await _dio.get(ApiConfig.guardConversations);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'conversations': response.data['conversations'] ?? [],
+          'userType': response.data['userType'] ?? 'user',
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get conversations',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get messages for a specific conversation
+  Future<Map<String, dynamic>> getGuardMessages(
+    String conversationId, {
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConfig.guardConversationMessages(conversationId),
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'messages': response.data['messages'] ?? [],
+          'pagination': response.data['pagination'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get messages',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Send a message to a recipient
+  Future<Map<String, dynamic>> sendGuardMessage({
+    required String recipientId,
+    required String message,
+    String? conversationId,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'recipientId': recipientId,
+        'message': message.trim(),
+      };
+      if (conversationId != null) {
+        data['conversationId'] = conversationId;
+      }
+
+      final response = await _dio.post(
+        ApiConfig.guardSendMessage,
+        data: data,
+      );
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': response.data['message'],
+          'conversationId': response.data['conversationId'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to send message',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Mark a single message as read
+  Future<Map<String, dynamic>> markGuardMessageAsRead(String messageId) async {
+    try {
+      final response = await _dio.put(
+        ApiConfig.guardMarkMessageRead(messageId),
+      );
+      if (response.statusCode == 200) {
+        return {'success': true};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to mark message as read',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Mark all messages in a conversation as read
+  Future<Map<String, dynamic>> markConversationAsRead(String conversationId) async {
+    try {
+      final response = await _dio.put(
+        ApiConfig.guardMarkConversationRead(conversationId),
+      );
+      if (response.statusCode == 200) {
+        return {'success': true};
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to mark conversation as read',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get total unread message count
+  Future<Map<String, dynamic>> getGuardUnreadCount() async {
+    try {
+      final response = await _dio.get(ApiConfig.guardUnreadCount);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'unreadCount': response.data['unreadCount'] ?? 0,
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get unread count',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get list of security guards for tenants to start chat
+  Future<Map<String, dynamic>> getSecurityListForChat() async {
+    try {
+      final response = await _dio.get(ApiConfig.guardSecurityList);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'securities': response.data['securities'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get security list',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get list of tenants for security to start chat
+  Future<Map<String, dynamic>> getTenantListForChat({String? search}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final response = await _dio.get(
+        ApiConfig.guardTenantList,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'tenants': response.data['tenants'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get tenant list',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Get or create a conversation with a recipient
+  Future<Map<String, dynamic>> getOrCreateConversation(String recipientId) async {
+    try {
+      final response = await _dio.post(
+        ApiConfig.guardGetOrCreateConversation,
+        data: {'recipientId': recipientId},
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'conversation': response.data['conversation'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Failed to get or create conversation',
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? e.message ?? 'Network error';
+      return {'success': false, 'error': msg};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }

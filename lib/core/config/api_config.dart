@@ -151,6 +151,21 @@ class ApiConfig {
   static String get subscriptionMy => '$subscriptionBase/my';
   static String get subscriptionAppActive => '$subscriptionBase/app-active';
 
+  // Guard Message / Chat endpoints
+  static String get guardMessagesBase => '$baseUrl/guard-messages';
+  static String get guardConversations => '$guardMessagesBase/conversations';
+  static String guardConversationMessages(String conversationId) =>
+      '$guardMessagesBase/conversations/$conversationId';
+  static String guardMarkConversationRead(String conversationId) =>
+      '$guardMessagesBase/conversations/$conversationId/read';
+  static String get guardSendMessage => '$guardMessagesBase/send';
+  static String guardMarkMessageRead(String messageId) =>
+      '$guardMessagesBase/$messageId/read';
+  static String get guardUnreadCount => '$guardMessagesBase/unread-count';
+  static String get guardSecurityList => '$guardMessagesBase/security-list';
+  static String get guardTenantList => '$guardMessagesBase/tenant-list';
+  static String get guardGetOrCreateConversation => '$guardMessagesBase/conversation';
+
   // Health check
   static String get health => '$baseUrl/health';
 }

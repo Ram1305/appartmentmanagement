@@ -239,7 +239,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
       final blocks = await _getBlocks();
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current.kidExits, lastAddVisitorError: apiError));
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current is SecurityLoaded ? current.kidExits : const [], lastAddVisitorError: apiError));
     } catch (e) {
       // Exception during API or parsing: add visitor locally and surface error
       final current = state;
@@ -274,7 +274,7 @@ class SecurityBloc extends Bloc<SecurityEvent, SecurityState> {
       );
       visitors.add(newVisitor);
       await _saveVisitors(visitors);
-      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current.kidExits, lastAddVisitorError: 'Could not save to server: ${e.toString()}'));
+      emit(SecurityLoaded(visitors: visitors, blocks: blocks, kidExits: current is SecurityLoaded ? current.kidExits : const [], lastAddVisitorError: 'Could not save to server: ${e.toString()}'));
     }
   }
 
