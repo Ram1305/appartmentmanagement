@@ -74,11 +74,13 @@ class RoomModel extends Equatable {
   final String id;
   final String number;
   final String type;
+  final bool isOccupied;
 
   const RoomModel({
     required this.id,
     required this.number,
     required this.type,
+    this.isOccupied = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -86,6 +88,7 @@ class RoomModel extends Equatable {
       'id': id,
       'number': number,
       'type': type,
+      'occupied': isOccupied,
     };
   }
 
@@ -94,10 +97,25 @@ class RoomModel extends Equatable {
       id: json['id'] as String,
       number: json['number'] as String,
       type: json['type'] as String,
+      isOccupied: json['occupied'] as bool? ?? false,
+    );
+  }
+
+  RoomModel copyWith({
+    String? id,
+    String? number,
+    String? type,
+    bool? isOccupied,
+  }) {
+    return RoomModel(
+      id: id ?? this.id,
+      number: number ?? this.number,
+      type: type ?? this.type,
+      isOccupied: isOccupied ?? this.isOccupied,
     );
   }
 
   @override
-  List<Object?> get props => [id, number, type];
+  List<Object?> get props => [id, number, type, isOccupied];
 }
 

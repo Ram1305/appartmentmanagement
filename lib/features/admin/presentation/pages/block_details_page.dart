@@ -709,13 +709,7 @@ class _BlockDetailsPageState extends State<BlockDetailsPage> {
                             )
                           else
                             ...floor.rooms.map((room) {
-                              // Check if room is occupied
-                              final isOccupied = allUsers.any((user) =>
-                                  user.block == blockName &&
-                                  user.floor == floor.number &&
-                                  user.roomNumber == room.number &&
-                                  user.status == AccountStatus.approved);
-                              
+                              final isOccupied = room.isOccupied;
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(16),

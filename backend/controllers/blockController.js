@@ -383,6 +383,70 @@ const deleteFloor = async (req, res) => {
   }
 };
 
+// @desc    Update room
+// @route   PUT /api/blocks/:blockId/floors/:floorId/rooms/:roomId
+// @access  Public
+const updateRoom = async (req, res) => {
+  try {
+    const { blockId, floorId, roomId } = req.params;
+    const { number, type, occupied } = req.body;
+
+    const block = await Block.findById(blockId);
+
+    if (!block) {
+      return res.status(404).json({
+        success: false,
+        error: 'Block not found',
+      });
+    }
+
+    const floor = block.floors.id(floorId);
+    if (!floor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Floor not found',
+      });
+    }
+
+    const room = floor.rooms.id(roomId);
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        error: 'Room not found',
+      });
+    }
+
+    if (number !== undefined) {
+      const roomExists = floor.rooms.find(
+        r => r.number === number && r._id.toString() !== roomId
+      );
+      if (roomExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'Room number already exists in this floor',
+        });
+      }
+      room.number = number;
+    }
+    if (type !== undefined) room.type = type;
+    if (occupied !== undefined) room.occupied = !!occupied;
+
+    await block.save();
+
+    res.json({
+      success: true,
+      message: 'Room updated successfully',
+      block,
+    });
+  } catch (error) {
+    console.error('Update room error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error',
+    });
+  }
+};
+
 // @desc    Toggle block active status
 // @route   PUT /api/blocks/:id/toggle-active
 // @access  Public
@@ -420,6 +484,7 @@ module.exports = {
   createBlock,
   addFloor,
   addRoom,
+  updateRoom,
   updateBlock,
   updateFloor,
   deleteBlock,

@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/app_theme.dart';
 import '../../../../../core/routes/app_routes.dart';
 import '../../../../../core/models/user_model.dart';
+import '../../../../../core/models/block_model.dart';
+import '../../../../../core/services/api_service.dart';
 import '../../bloc/admin_bloc.dart';
 
 class UsersTab extends StatelessWidget {
@@ -268,7 +270,69 @@ class UsersTab extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 4),
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 32),
+                                    itemBuilder: (context) {
+                                      final items = <PopupMenuItem<String>>[];
+                                      if (user.status == AccountStatus.pending ||
+                                          user.status == AccountStatus.rejected) {
+                                        items.add(
+                                          const PopupMenuItem<String>(
+                                            value: 'approve',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.check_circle, size: 16, color: AppTheme.secondaryColor),
+                                                SizedBox(width: 8),
+                                                Text('Approve & assign room', style: TextStyle(fontSize: 12)),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      if (user.status != AccountStatus.rejected) {
+                                        items.add(
+                                          const PopupMenuItem<String>(
+                                            value: 'reject',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.cancel, size: 16, color: AppTheme.errorColor),
+                                                SizedBox(width: 8),
+                                                Text('Reject', style: TextStyle(fontSize: 12)),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return items;
+                                    },
+                                    onSelected: (value) {
+                                      if (value == 'approve') {
+                                        showModalBottomSheet<void>(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (ctx) => _ApprovalBottomSheet(tenant: user),
+                                        );
+                                      } else if (value == 'reject') {
+                                        context.read<AdminBloc>().add(
+                                          UpdateUserStatusEvent(
+                                            userId: user.id,
+                                            status: AccountStatus.rejected,
+                                          ),
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('User rejected'),
+                                            backgroundColor: AppTheme.errorColor,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
                                   Switch(
                                     value: user.isActive,
                                     onChanged: (value) {
@@ -313,5 +377,248 @@ class UsersTab extends StatelessWidget {
       case AccountStatus.rejected:
         return 'REJ';
     }
+  }
+}
+
+/// Bottom sheet for admin to approve a user and assign block/floor/room.
+class _ApprovalBottomSheet extends StatefulWidget {
+  final UserModel tenant;
+
+  const _ApprovalBottomSheet({required this.tenant});
+
+  @override
+  State<_ApprovalBottomSheet> createState() => _ApprovalBottomSheetState();
+}
+
+class _ApprovalBottomSheetState extends State<_ApprovalBottomSheet> {
+  final ApiService _apiService = ApiService();
+  final formKey = GlobalKey<FormState>();
+
+  List<BlockModel> _blocks = [];
+  bool _isLoading = true;
+
+  BlockModel? _selectedBlock;
+  FloorModel? _selectedFloor;
+  RoomModel? _selectedRoom;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBlocks();
+  }
+
+  Future<void> _loadBlocks() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _apiService.getAllBlocks();
+      if (response['success'] == true && response['blocks'] != null) {
+        setState(() {
+          _blocks = (response['blocks'] as List)
+              .map((b) => BlockModel.fromJson(b))
+              .toList();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading blocks: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const Text(
+              'Approve User',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Assign room details for ${widget.tenant.name}',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else ...[
+              DropdownButtonFormField<BlockModel>(
+                value: _selectedBlock,
+                decoration: const InputDecoration(
+                  labelText: 'Block *',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.all(12),
+                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                dropdownColor: Colors.white,
+                items: _blocks.map((block) {
+                  return DropdownMenuItem<BlockModel>(
+                    value: block,
+                    child: Text('Block ${block.name}', style: const TextStyle(color: Colors.black)),
+                  );
+                }).toList(),
+                onChanged: (BlockModel? value) {
+                  setState(() {
+                    _selectedBlock = value;
+                    _selectedFloor = null;
+                    _selectedRoom = null;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) return 'Please select a block';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<FloorModel>(
+                value: _selectedFloor,
+                decoration: const InputDecoration(
+                  labelText: 'Floor *',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.all(12),
+                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                dropdownColor: Colors.white,
+                items: _selectedBlock?.floors.map((floor) {
+                  return DropdownMenuItem<FloorModel>(
+                    value: floor,
+                    child: Text('Floor ${floor.number}', style: const TextStyle(color: Colors.black)),
+                  );
+                }).toList(),
+                onChanged: _selectedBlock == null
+                    ? null
+                    : (FloorModel? value) {
+                        setState(() {
+                          _selectedFloor = value;
+                          _selectedRoom = null;
+                        });
+                      },
+                validator: (value) {
+                  if (value == null) return 'Please select a floor';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<RoomModel>(
+                value: _selectedRoom,
+                decoration: const InputDecoration(
+                  labelText: 'Room Number *',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.all(12),
+                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                dropdownColor: Colors.white,
+                items: _selectedFloor?.rooms.map((room) {
+                  return DropdownMenuItem<RoomModel>(
+                    value: room,
+                    child: Text('Room ${room.number} (${room.type})', style: const TextStyle(color: Colors.black)),
+                  );
+                }).toList(),
+                onChanged: _selectedFloor == null
+                    ? null
+                    : (RoomModel? value) {
+                        setState(() => _selectedRoom = value);
+                      },
+                validator: (value) {
+                  if (value == null) return 'Please select a room';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(fontSize: 14)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          context.read<AdminBloc>().add(
+                                UpdateUserStatusEvent(
+                                  userId: widget.tenant.id,
+                                  status: AccountStatus.approved,
+                                  block: _selectedBlock!.name,
+                                  floor: _selectedFloor!.number,
+                                  roomNumber: _selectedRoom!.number,
+                                ),
+                              );
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('User approved and room assigned successfully.'),
+                              backgroundColor: AppTheme.secondaryColor,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Approve', style: TextStyle(fontSize: 14)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

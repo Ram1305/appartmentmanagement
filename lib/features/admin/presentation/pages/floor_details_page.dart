@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/app_theme.dart';
 import '../../../../core/models/block_model.dart';
-import '../../../../core/models/user_model.dart';
 import '../bloc/admin_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -305,7 +304,6 @@ class _FloorDetailsPageState extends State<FloorDetailsPage> {
         ),
         body: BlocBuilder<AdminBloc, AdminState>(
           builder: (context, state) {
-            final allUsers = state is AdminLoaded ? state.allUsers : [];
             final floor = _currentFloor ?? widget.floor;
             final block = _currentBlock ?? widget.block;
 
@@ -381,13 +379,10 @@ class _FloorDetailsPageState extends State<FloorDetailsPage> {
                           _buildStatCard(
                             icon: Icons.person,
                             label: 'Occupied',
-                            value: floor.rooms.where((room) {
-                              return allUsers.any((user) =>
-                                  user.block == block.name &&
-                                  user.floor == floor.number &&
-                                  user.roomNumber == room.number &&
-                                  user.status == AccountStatus.approved);
-                            }).length.toString(),
+                            value: floor.rooms
+                                .where((room) => room.isOccupied)
+                                .length
+                                .toString(),
                           ),
                         ],
                       ),
@@ -431,11 +426,7 @@ class _FloorDetailsPageState extends State<FloorDetailsPage> {
                           itemCount: floor.rooms.length,
                           itemBuilder: (context, index) {
                             final room = floor.rooms[index];
-                            final isOccupied = allUsers.any((user) =>
-                                user.block == block.name &&
-                                user.floor == floor.number &&
-                                user.roomNumber == room.number &&
-                                user.status == AccountStatus.approved);
+                            final isOccupied = room.isOccupied;
 
                             return _buildRoomListItem(
                               context,
@@ -561,18 +552,27 @@ class _FloorDetailsPageState extends State<FloorDetailsPage> {
                 Switch(
                   value: isOccupied,
                   onChanged: (value) {
-                    // TODO: Implement toggle occupied status API call
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          value
-                              ? 'Room ${room.number} marked as occupied'
-                              : 'Room ${room.number} marked as free',
+                    context.read<AdminBloc>().add(
+                          ToggleRoomOccupiedEvent(
+                            blockId: block.id,
+                            floorId: floor.id,
+                            roomId: room.id,
+                            isOccupied: value,
+                          ),
+                        );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            value
+                                ? 'Room ${room.number} marked as occupied'
+                                : 'Room ${room.number} marked as free',
+                          ),
+                          backgroundColor: AppTheme.primaryColor,
+                          duration: const Duration(seconds: 2),
                         ),
-                        backgroundColor: AppTheme.primaryColor,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
+                      );
+                    }
                   },
                   activeColor: Colors.orange,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

@@ -6,6 +6,7 @@ const {
   createBlock,
   addFloor,
   addRoom,
+  updateRoom,
   updateBlock,
   updateFloor,
   deleteBlock,
@@ -47,6 +48,11 @@ router.delete('/:id', deleteBlock);
 // @desc    Add room to floor
 // @access  Public
 router.post('/:blockId/floors/:floorId/rooms', addRoom);
+
+// @route   PUT /api/blocks/:blockId/floors/:floorId/rooms/:roomId
+// @desc    Update room
+// @access  Public
+router.put('/:blockId/floors/:floorId/rooms/:roomId', updateRoom);
 
 // @route   PUT /api/blocks/:blockId/floors/:floorId
 // @desc    Update floor

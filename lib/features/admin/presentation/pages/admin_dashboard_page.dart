@@ -5,7 +5,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/admin_bloc.dart';
 import 'tabs/overview_tab.dart';
 import 'tabs/blocks_tab.dart';
-import 'tabs/managers_tab.dart';
+// import 'tabs/managers_tab.dart';
 import 'tabs/security_tab.dart';
 import 'tabs/users_tab.dart';
 import 'tabs/assign_payments_tab.dart';
@@ -32,7 +32,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 13, vsync: this);
+    _tabController = TabController(length: 12, vsync: this);
     context.read<AdminBloc>().add(LoadBlocksEvent());
     // Initialize dummy data on first load
     context.read<AdminBloc>().add(InitializeDummyDataEvent());
@@ -76,7 +76,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Overview'),
             Tab(icon: Icon(Icons.apartment), text: 'Blocks'),
-            Tab(icon: Icon(Icons.people), text: 'Managers'),
+            // Tab(icon: Icon(Icons.people), text: 'Managers'),
             Tab(icon: Icon(Icons.security), text: 'Security'),
             Tab(icon: Icon(Icons.person), text: 'Users'),
             Tab(icon: Icon(Icons.account_balance_wallet), text: 'Assign Payments'),
@@ -112,14 +112,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
               children: [
                 OverviewTab(state: state),
                 BlocksTab(state: state),
-                ManagersTab(state: state),
+                // ManagersTab(state: state),
                 SecurityTab(state: state),
                 UsersTab(state: state),
                 AssignPaymentsTab(state: state),
                 PaymentsTab(
                   state: state,
                   parentTabController: _tabController,
-                  parentTabIndex: 6,
+                  parentTabIndex: 5,
                 ),
                 NoticesTab(state: state),
                 AdsTab(state: state),
@@ -158,14 +158,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                 children: [
                   OverviewTab(state: _lastLoadedState!),
                   BlocksTab(state: _lastLoadedState!),
-                  ManagersTab(state: _lastLoadedState!),
+                  // ManagersTab(state: _lastLoadedState!),
                   SecurityTab(state: _lastLoadedState!),
                   UsersTab(state: _lastLoadedState!),
                   AssignPaymentsTab(state: _lastLoadedState!),
                   PaymentsTab(
                     state: _lastLoadedState!,
                     parentTabController: _tabController,
-                    parentTabIndex: 6,
+                    parentTabIndex: 5,
                   ),
                   NoticesTab(state: _lastLoadedState!),
                   AdsTab(state: _lastLoadedState!),

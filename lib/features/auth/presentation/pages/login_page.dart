@@ -394,13 +394,14 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _isLoading ? null : _navigateToForgotPassword,
-                      child: const Text('Forgot Password?'),
+                  if (_selectedUserType != UserType.admin)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _navigateToForgotPassword,
+                        child: const Text('Forgot Password?'),
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 20),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {

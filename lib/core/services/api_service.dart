@@ -1080,6 +1080,66 @@ class ApiService {
     }
   }
 
+  // Update room (number, type, or occupied)
+  Future<Map<String, dynamic>> updateRoom({
+    required String blockId,
+    required String floorId,
+    required String roomId,
+    String? number,
+    String? type,
+    bool? isOccupied,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (number != null) data['number'] = number;
+      if (type != null) data['type'] = type;
+      if (isOccupied != null) data['occupied'] = isOccupied;
+
+      final response = await _dio.put(
+        '${ApiConfig.updateRoom}/$blockId/floors/$floorId/rooms/$roomId',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'block': response.data['block'],
+          'message': response.data['message'] ?? 'Room updated successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response.data['error'] ?? 'Failed to update room',
+        };
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'Connection timeout. Please check your internet connection and ensure the server is running.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Unable to connect to server. Please check your internet connection and verify the server is running.';
+      } else if (e.response != null) {
+        errorMessage =
+            e.response?.data['error'] ?? e.message ?? 'Network error';
+      } else {
+        errorMessage = e.message ?? 'Network error';
+      }
+      return {
+        'success': false,
+        'error': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Toggle user active status
   Future<Map<String, dynamic>> toggleUserActive(String userId) async {
     try {

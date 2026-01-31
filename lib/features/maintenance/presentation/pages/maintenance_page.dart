@@ -46,10 +46,10 @@ class MaintenancePage extends StatelessWidget {
                     'assets/maintance.svg',
                     width: 80,
                     height: 80,
-                    colorFilter: ColorFilter.mode(
-                      Colors.white.withOpacity(0.95),
-                      BlendMode.srcIn,
-                    ),
+                    // colorFilter: ColorFilter.mode(
+                    //   Colors.white.withOpacity(0.95),
+                    //   BlendMode.srcIn,
+                    // ),
                   ),
                 ),
                 const SizedBox(height: 32),

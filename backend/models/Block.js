@@ -10,6 +10,10 @@ const roomSchema = new mongoose.Schema({
     required: true,
     enum: ['1BHK', '2BHK', '3BHK', '4BHK'],
   },
+  occupied: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   _id: true,
   timestamps: false,

@@ -293,6 +293,25 @@ class ToggleUserActiveEvent extends AdminEvent {
   List<Object?> get props => [userId];
 }
 
+class UpdateUserStatusEvent extends AdminEvent {
+  final String userId;
+  final AccountStatus status;
+  final String? block;
+  final String? floor;
+  final String? roomNumber;
+
+  const UpdateUserStatusEvent({
+    required this.userId,
+    required this.status,
+    this.block,
+    this.floor,
+    this.roomNumber,
+  });
+
+  @override
+  List<Object?> get props => [userId, status, block, floor, roomNumber];
+}
+
 class ToggleBlockActiveEvent extends AdminEvent {
   final String blockId;
 
@@ -300,6 +319,23 @@ class ToggleBlockActiveEvent extends AdminEvent {
 
   @override
   List<Object?> get props => [blockId];
+}
+
+class ToggleRoomOccupiedEvent extends AdminEvent {
+  final String blockId;
+  final String floorId;
+  final String roomId;
+  final bool isOccupied;
+
+  const ToggleRoomOccupiedEvent({
+    required this.blockId,
+    required this.floorId,
+    required this.roomId,
+    required this.isOccupied,
+  });
+
+  @override
+  List<Object?> get props => [blockId, floorId, roomId, isOccupied];
 }
 
 // States
@@ -354,9 +390,9 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<AddFloorEvent>(_onAddFloor);
     on<LoadAllUsersEvent>(_onLoadAllUsers);
     on<InitializeDummyDataEvent>(_onInitializeDummyData);
-    on<AddManagerEvent>(_onAddManager);
-    on<UpdateManagerEvent>(_onUpdateManager);
-    on<DeleteManagerEvent>(_onDeleteManager);
+    // on<AddManagerEvent>(_onAddManager);
+    // on<UpdateManagerEvent>(_onUpdateManager);
+    // on<DeleteManagerEvent>(_onDeleteManager);
     on<AddSecurityEvent>(_onAddSecurity);
     on<UpdateSecurityEvent>(_onUpdateSecurity);
     on<DeleteSecurityEvent>(_onDeleteSecurity);
@@ -365,12 +401,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<UnblockUserEvent>(_onUnblockUser);
     on<DeleteUserEvent>(_onDeleteUser);
     on<ToggleUserActiveEvent>(_onToggleUserActive);
+    on<UpdateUserStatusEvent>(_onUpdateUserStatus);
     on<ToggleBlockActiveEvent>(_onToggleBlockActive);
     on<AddRoomEvent>(_onAddRoom);
     on<EditBlockEvent>(_onEditBlock);
     on<DeleteBlockEvent>(_onDeleteBlock);
     on<EditFloorEvent>(_onEditFloor);
     on<DeleteFloorEvent>(_onDeleteFloor);
+    on<ToggleRoomOccupiedEvent>(_onToggleRoomOccupied);
   }
 
   Future<void> _onLoadBlocks(
@@ -606,99 +644,99 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
   }
 
-  Future<void> _onAddManager(
-    AddManagerEvent event,
-    Emitter<AdminState> emit,
-  ) async {
-    if (isClosed) return;
-    emit(AdminLoading());
-    try {
-      final username = event.name.toLowerCase().replaceAll(' ', '_');
+  // Future<void> _onAddManager(
+  //   AddManagerEvent event,
+  //   Emitter<AdminState> emit,
+  // ) async {
+  //   if (isClosed) return;
+  //   emit(AdminLoading());
+  //   try {
+  //     final username = event.name.toLowerCase().replaceAll(' ', '_');
 
-      final response = await _apiService.registerUser(
-        name: event.name,
-        username: username,
-        email: event.email,
-        password: event.password,
-        mobileNumber: event.mobileNumber,
-        userType: 'manager',
-        profilePic: event.profilePic,
-        aadhaarFront: event.idProof, // Using aadhaarFront field for ID proof
-      );
+  //     final response = await _apiService.registerUser(
+  //       name: event.name,
+  //       username: username,
+  //       email: event.email,
+  //       password: event.password,
+  //       mobileNumber: event.mobileNumber,
+  //       userType: 'manager',
+  //       profilePic: event.profilePic,
+  //       aadhaarFront: event.idProof, // Using aadhaarFront field for ID proof
+  //     );
 
-      if (response['success'] == true) {
-        add(LoadAllUsersEvent());
-        add(LoadBlocksEvent());
-      } else {
-        if (!isClosed) {
-          emit(AdminError(
-              message: response['error'] ?? 'Failed to add manager'));
-        }
-      }
-    } catch (e) {
-      if (!isClosed) {
-        emit(AdminError(message: e.toString()));
-      }
-    }
-  }
+  //     if (response['success'] == true) {
+  //       add(LoadAllUsersEvent());
+  //       add(LoadBlocksEvent());
+  //     } else {
+  //       if (!isClosed) {
+  //         emit(AdminError(
+  //             message: response['error'] ?? 'Failed to add manager'));
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (!isClosed) {
+  //       emit(AdminError(message: e.toString()));
+  //     }
+  //   }
+  // }
 
-  Future<void> _onUpdateManager(
-    UpdateManagerEvent event,
-    Emitter<AdminState> emit,
-  ) async {
-    if (isClosed) return;
-    emit(AdminLoading());
-    try {
-      final response = await _apiService.updateManager(
-        managerId: event.managerId,
-        name: event.name,
-        email: event.email,
-        mobileNumber: event.mobileNumber,
-        password: event.password,
-        profilePic: event.profilePic,
-        idProof: event.idProof,
-      );
+  // Future<void> _onUpdateManager(
+  //   UpdateManagerEvent event,
+  //   Emitter<AdminState> emit,
+  // ) async {
+  //   if (isClosed) return;
+  //   emit(AdminLoading());
+  //   try {
+  //     final response = await _apiService.updateManager(
+  //       managerId: event.managerId,
+  //       name: event.name,
+  //       email: event.email,
+  //       mobileNumber: event.mobileNumber,
+  //       password: event.password,
+  //       profilePic: event.profilePic,
+  //       idProof: event.idProof,
+  //     );
 
-      if (response['success'] == true) {
-        add(LoadAllUsersEvent());
-        add(LoadBlocksEvent());
-      } else {
-        if (!isClosed) {
-          emit(AdminError(
-              message: response['error'] ?? 'Failed to update manager'));
-        }
-      }
-    } catch (e) {
-      if (!isClosed) {
-        emit(AdminError(message: e.toString()));
-      }
-    }
-  }
+  //     if (response['success'] == true) {
+  //       add(LoadAllUsersEvent());
+  //       add(LoadBlocksEvent());
+  //     } else {
+  //       if (!isClosed) {
+  //         emit(AdminError(
+  //             message: response['error'] ?? 'Failed to update manager'));
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (!isClosed) {
+  //       emit(AdminError(message: e.toString()));
+  //     }
+  //   }
+  // }
 
-  Future<void> _onDeleteManager(
-    DeleteManagerEvent event,
-    Emitter<AdminState> emit,
-  ) async {
-    if (isClosed) return;
-    emit(AdminLoading());
-    try {
-      final response = await _apiService.deleteManager(event.managerId);
+  // Future<void> _onDeleteManager(
+  //   DeleteManagerEvent event,
+  //   Emitter<AdminState> emit,
+  // ) async {
+  //   if (isClosed) return;
+  //   emit(AdminLoading());
+  //   try {
+  //     final response = await _apiService.deleteManager(event.managerId);
 
-      if (response['success'] == true) {
-        add(LoadAllUsersEvent());
-        add(LoadBlocksEvent());
-      } else {
-        if (!isClosed) {
-          emit(AdminError(
-              message: response['error'] ?? 'Failed to delete manager'));
-        }
-      }
-    } catch (e) {
-      if (!isClosed) {
-        emit(AdminError(message: e.toString()));
-      }
-    }
-  }
+  //     if (response['success'] == true) {
+  //       add(LoadAllUsersEvent());
+  //       add(LoadBlocksEvent());
+  //     } else {
+  //       if (!isClosed) {
+  //         emit(AdminError(
+  //             message: response['error'] ?? 'Failed to delete manager'));
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (!isClosed) {
+  //       emit(AdminError(message: e.toString()));
+  //     }
+  //   }
+  // }
 
   Future<void> _onAddSecurity(
     AddSecurityEvent event,
@@ -1090,6 +1128,35 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
   }
 
+  Future<void> _onUpdateUserStatus(
+    UpdateUserStatusEvent event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      final response = await _apiService.updateUserStatus(
+        event.userId,
+        event.status.name,
+        block: event.block,
+        floor: event.floor,
+        roomNumber: event.roomNumber,
+      );
+      if (response['success'] == true) {
+        add(LoadAllUsersEvent());
+      } else {
+        if (!isClosed) {
+          emit(AdminError(
+              message: response['error'] ?? 'Failed to update user status'));
+        }
+        add(LoadAllUsersEvent());
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(AdminError(message: e.toString()));
+      }
+      add(LoadAllUsersEvent());
+    }
+  }
+
   Future<void> _onToggleBlockActive(
     ToggleBlockActiveEvent event,
     Emitter<AdminState> emit,
@@ -1299,6 +1366,48 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       if (response['success'] != true) {
         emit(
             AdminError(message: response['error'] ?? 'Failed to delete floor'));
+        return;
+      }
+
+      // Reload blocks from backend
+      final blocksResponse = await _apiService.getAllBlocks();
+      final List<BlockModel> blocks = [];
+      if (blocksResponse['success'] == true &&
+          blocksResponse['blocks'] != null) {
+        final List<dynamic> blocksList = blocksResponse['blocks'];
+        blocks.addAll(blocksList.map((b) => BlockModel.fromJson(b)).toList());
+      }
+
+      emit(AdminLoaded(
+        blocks: blocks,
+        allUsers: currentState.allUsers,
+        managers: currentState.managers,
+        securityStaff: currentState.securityStaff,
+        regularUsers: currentState.regularUsers,
+      ));
+    } catch (e) {
+      emit(AdminError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onToggleRoomOccupied(
+    ToggleRoomOccupiedEvent event,
+    Emitter<AdminState> emit,
+  ) async {
+    try {
+      final currentState = state;
+      if (currentState is! AdminLoaded) return;
+
+      final response = await _apiService.updateRoom(
+        blockId: event.blockId,
+        floorId: event.floorId,
+        roomId: event.roomId,
+        isOccupied: event.isOccupied,
+      );
+
+      if (response['success'] != true) {
+        emit(AdminError(
+            message: response['error'] ?? 'Failed to update room status'));
         return;
       }
 

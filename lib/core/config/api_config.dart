@@ -43,6 +43,7 @@ class ApiConfig {
   static String get createBlock => blocksBase;
   static String get addFloor => blocksBase; // Use with /:id/floors
   static String get addRoom => blocksBase; // Use with /:blockId/floors/:floorId/rooms
+  static String get updateRoom => blocksBase; // Use with /:blockId/floors/:floorId/rooms/:roomId
   static String get updateBlock => blocksBase; // Use with /:id
   static String get updateFloor => blocksBase; // Use with /:blockId/floors/:floorId
   static String get deleteBlock => blocksBase; // Use with /:id

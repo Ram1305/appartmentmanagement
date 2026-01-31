@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/app_theme.dart';
 import '../../../../../core/routes/app_routes.dart';
@@ -222,19 +222,10 @@ class BlocksTab extends StatelessWidget {
 
   Widget _buildBlockCard(BuildContext context, BlockModel block, int index) {
     final totalRooms = block.floors.fold<int>(0, (sum, floor) => sum + floor.rooms.length);
-    // Calculate occupied rooms by checking if any user is assigned to the room
+    // Calculate occupied rooms from room.isOccupied
     final activeRooms = block.floors.fold<int>(
       0,
-      (sum, floor) {
-        final occupiedInFloor = floor.rooms.where((room) {
-          return state.allUsers.any((user) =>
-              user.block == block.name &&
-              user.floor == floor.number &&
-              user.roomNumber == room.number &&
-              user.status == AccountStatus.approved);
-        }).length;
-        return sum + occupiedInFloor;
-      },
+      (sum, floor) => sum + floor.rooms.where((room) => room.isOccupied).length,
     );
 
     return Container(
